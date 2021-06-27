@@ -12,6 +12,8 @@ Our construction is based on AC20, which reconciles Bulletproofs with Sigma-prot
 
 For our implementation we use the MPyC framework: [https://github.com/lschoe/].
 
+*Note: This implementation is work-in-progress. Expect many bugs/issues.*
+
 ## Installation
 
 This implementation depends on MPyC (version 0.74 or above), gmpy2 and Secure Groups [https://github.com/toonsegers/sec_groups/].
@@ -38,7 +40,8 @@ Install Secure Groups:
 The following demos are included:
 
 * `demo_circuit_builder.py` to use standard Python and automatically construct an arithmetic circuit in memory;
-TODO
+* `demo_zkp_*ac20*.py` to use the AC20/Bulletproofs proof system to prove correctness of the (MPC) computation;
+* `demo_zkp_pynocchio.py and *trinocchio.py` to use the Pinocchio zk-SNARK to prove correctness of the (MPC) computation.
 
 Run the demos as follows:
 

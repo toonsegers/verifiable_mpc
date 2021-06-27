@@ -7,13 +7,13 @@ if project_root not in sys.path:
 from random import SystemRandom
 import unittest
 
-import ac20_circuit_sat.circuit_sat as cs
-import ac20_circuit_sat.pivot as pivot
-import ac20_circuit_sat.nullity as nullity
-import ac20_circuit_sat.compressed_pivot as compressed_pivot
+import verifiable_mpc.ac20_circuit_sat.circuit_sat_r1cs as cs
+import verifiable_mpc.ac20_circuit_sat.pivot as pivot
+import verifiable_mpc.ac20_circuit_sat.nullity as nullity
+import verifiable_mpc.ac20_circuit_sat.compressed_pivot as compressed_pivot
 from mpyc.finfields import GF, FiniteFieldElement
-from tools.find_primes import find_safe_primes
-from sec_grps2.fingroups import QuadraticResidue
+from sec_groups.tools.find_primes import find_safe_primes
+from sec_groups.fingroups import QuadraticResidue
 
 
 class Nullity(unittest.TestCase):
