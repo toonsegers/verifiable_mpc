@@ -78,7 +78,8 @@ async def main(pivot_choice, group_choice, n):
     g = f + 100
     g.label_output("g")
     h = g >= 10
-    h.label_output("h")
+    j = h != 10
+    j.label_output("j")
 
     x = circuit.initial_inputs()
     # Check if resulting commitment vector is of appropriate length.

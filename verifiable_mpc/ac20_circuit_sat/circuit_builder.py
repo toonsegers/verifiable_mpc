@@ -269,35 +269,17 @@ class CircuitVar:
 
         # Compute output CircuitVar
         a = self.value
-        b = a == 0
-        b = mpc.if_else(b, 0, 1)
-        cv_b = type(self)(
-            b, self.circuit, name=self.circuit.name_dummy(), input_var=False
-        )
+        b = mpc.if_else(a == 0, 0, 1)
 
         # Calculate witnesses
-        assert isinstance(a, (FiniteFieldElement, SecureFiniteField))
+        assert isinstance(a, (FiniteFieldElement, SecureFiniteField, int, SecureInteger))
         c = (a + (1 - b)) ** (-1)
-        cv_c = type(self)(
-            c, self.circuit, name="witness_{" + self.name + "!=0}", input_var=True
-        )
-        d = a * (1 - b)
-        cv_d = type(self)(
-            d, self.circuit, name=self.circuit.name_dummy(), input_var=False
-        )
-        cv_d.label_output(
-            "witness_{" + self.name + "!=0}"
-        )  # Prover uses circuit to show that a(1-b)=0.
-        cv_e = 1 - cv_b
+        cv_c = type(self)(c, self.circuit, name="witness_{" + self.name + "!=0}", input_var=True)
 
         # Expand circuit with gates for equations a · c = b, a · (1 − b) = 0
-        # TODO: can we replace next lines by simple expressions, e.g.: cv_b = self * cv_c?
-        # cv_b = self * cv_c
-        # cv_d = self * cv_e
-        g1 = Gate(op.mul, cv_b, [self, cv_c])
-        g2 = Gate(op.mul, cv_d, [self, cv_e])
-        self.circuit.add_gate(g1)
-        self.circuit.add_gate(g2)
+        cv_b = self * cv_c
+        cv_d = self * (1 - cv_b)
+        cv_d.label_output("witness_{" + self.name + "!=0}") 
 
         return cv_b
 
@@ -313,9 +295,7 @@ class CircuitVar:
         # Compute output CircuitVar
         a = self.value
         b = a >= 0
-        cv_b = type(self)(
-            b, self.circuit, name=self.circuit.name_dummy(), input_var=False
-        )
+        cv_b = type(self)(b, self.circuit, name="witness_{" + self.name + ">=0}", input_var=True)
 
         # Calculate witnesses
         assert isinstance(a, (int, SecureInteger))
@@ -414,9 +394,7 @@ def construct_affine_form(gate, circuit, wire=None):
             # Input is mul-gate or add-gate
             else:
                 gate_input = gate.inputs[wire].name
-                child_gate = [g for g in circuit.gates if g.output.name == gate_input][
-                    0
-                ]
+                child_gate = [g for g in circuit.gates if g.output.name == gate_input][0]
                 # If input is mul-gate
                 if child_gate.op == op.mul:
                     ret.coeffs[circuit.input_ct + child_gate.mul_index] += 1
