@@ -344,6 +344,13 @@ class CircuitVar:
     def __repr__(self):
         return self.name + "{" + str(self.value) + "}"
 
+    def __pow__(self, other, mod=None):
+        """Exponentiation with public integral power p>=0."""
+        if other<0: raise ValueError("Exponent cannot be negative: ", other)
+        if other==0: return 1
+        if other==1: return self
+        return self*pow(self, other-1)
+
 
 def twos_complement(value, bit_length):
     return bin(value & (2 ** bit_length - 1))

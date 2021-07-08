@@ -35,7 +35,6 @@ from sec_groups.secgroups import SecureGroup, secure_repeat
 from sec_groups.tools.find_primes import find_safe_primes
 
 
-prng = SystemRandom()
 pp = pprint.PrettyPrinter(indent=4)
 
 PIVOT = cs.PivotChoice.compressed  
@@ -78,7 +77,7 @@ async def main(pivot_choice, group_choice, n):
     c = cb.CircuitVar(sectype(2), circuit, "c")
 
     d = c + c + c * c + c * c * 1 + 1 + b
-    e = d * d + c + 10
+    e = d * d + c**n + 10
     f = d * c + e
     f.label_output("f")
     g = f != 100
@@ -130,12 +129,16 @@ if __name__ == "__main__":
         action="store_true",
         help="use elliptic curve groups (default QR groups)",
     )
+    parser.add_argument('--basic', action='store_true',
+                        help='use basic pivot (not the compressed pivot)')
     parser.add_argument('--koe', action='store_true',
-                        help='use pivot based on Knowledge-of-Exponent assumption (and BN256 curves)')
-    parser.set_defaults(n=10)
+                        help='use pivot based on Knowledge-of-Exponent assumption and BN256 curves')
+    parser.set_defaults(n=1)
     args = parser.parse_args()
     if args.elliptic:
         GROUP = "Elliptic"
+    elif args.basic:
+        PIVOT = cs.PivotChoice.pivot
     elif args.koe:
         PIVOT = cs.PivotChoice.koe
 

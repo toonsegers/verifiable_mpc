@@ -33,11 +33,11 @@ from sec_groups.tools.find_primes import find_safe_primes
 
 pp = pprint.PrettyPrinter(indent=4)
 
+PIVOT = cs.PivotChoice.compressed  
+GROUP = "QR"
 
-GROUP = "QR"  # "Elliptic" or "QR"
 
-
-def main(pivot_choice):
+def main(pivot_choice, group_choice, n):
     print("Pivot selected: ", pivot_choice)
 
     if pivot_choice == cs.PivotChoice.koe:
@@ -67,7 +67,7 @@ def main(pivot_choice):
     c = cb.CircuitVar(gf(2), circuit, "c")
 
     d = c + c + c * c + c * c * 1 + 1 + b 
-    e = d*d + c + 10
+    e = d*d + c**n + 10
     f = d*c + e
     f.label_output("f")
     print("f=", f)
@@ -103,15 +103,29 @@ def main(pivot_choice):
 
 
 if __name__ == "__main__":
-    pivot_options = {
-        1: cs.PivotChoice.pivot,
-        2: cs.PivotChoice.compressed,
-        3: cs.PivotChoice.koe,
-    }
-    choice = int(input(f"Select {pivot_options}, default [2]: ") or "2")
-    pivot_choice = pivot_options[choice]
+    import argparse
 
-    verification = main(pivot_choice)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-n", type=int, help="roughly number of multiplications")
+    parser.add_argument(
+        "--elliptic",
+        action="store_true",
+        help="use elliptic curve groups (default QR groups)",
+    )
+    parser.add_argument('--basic', action='store_true',
+                        help='use basic pivot (not the compressed pivot)')
+    parser.add_argument('--koe', action='store_true',
+                        help='use pivot based on Knowledge-of-Exponent assumption and BN256 curves')
+    parser.set_defaults(n=10)
+    args = parser.parse_args()
+    if args.elliptic:
+        GROUP = "Elliptic"
+    elif args.basic:
+        PIVOT = cs.PivotChoice.pivot
+    elif args.koe:
+        PIVOT = cs.PivotChoice.koe
+
+    verification = main(PIVOT, GROUP, args.n)
 
 
 
