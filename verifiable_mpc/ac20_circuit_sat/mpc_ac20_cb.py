@@ -6,21 +6,25 @@ to Plug & Play Secure Algorithmics''
 
 """
 
-import pprint
-
+import mpyc.mpctools as mpctools
 import verifiable_mpc.ac20_circuit_sat.pivot as pivot
 import verifiable_mpc.ac20_circuit_sat.circuit_builder as cb
 import verifiable_mpc.ac20_circuit_sat.circuit_sat_r1cs as cs
-import verifiable_mpc.ac20_circuit_sat.knowledge_of_exponent as koe
-from verifiable_mpc.ac20_circuit_sat.pivot import _int as _int
 from mpyc.runtime import mpc, logging
-from mpyc.random import randrange
-from sec_groups.fingroups import EllipticCurveElement
-from sec_groups.secgroups import secure_repeat_public_base_public_output as secure_repeat
-import verifiable_mpc.tools.qap_creator as qc
-
-
-pp = pprint.PrettyPrinter(indent=4)
+from verifiable_mpc.ac20_circuit_sat.mpc_ac20 import (
+    list_mul,
+    vector_commitment,
+    create_generators,
+    koe_trusted_setup,
+    koe_restriction_argument_prover,
+    koe_opening_linear_form_prover,
+    protocol_4_prover,
+    protocol_5_prover,
+    calculate_fgh_polys,
+    _recombination_vectors,
+    recombine,
+    prove_linear_form_eval,
+)
 
 logger_cs_mpc_cb = logging.getLogger("cs_mpc")
 logger_cs_mpc_cb.setLevel(logging.INFO)
@@ -30,241 +34,6 @@ logger_cs_mpc_cb_hin.setLevel(logging.INFO)
 
 logger_cs_mpc_cb_hout = logging.getLogger("cs_mpc_hash_outputs")
 logger_cs_mpc_cb_hout.setLevel(logging.INFO)
-
-
-def vector_commitment(x, gamma, g, h):
-    """Pedersen vector commitment. Definition 1 of AC20.
-
-    Uses secure groups to locally compute Prod_j g_j^{share_i of x_j},
-    reduce result and publish this to other parties for recombination.
-    """
-    c = secure_repeat(g + [h], x + [gamma])
-    return c
-
-
-async def create_generators(group, sectype, input_length):
-    # TODO: consider setup to exclude trapdoors
-    h = group.generator
-    random_exponents = [mpc._random(sectype) for i in range(input_length + 1)]
-    kg = await mpc.gather([secure_repeat(h, u) for u in random_exponents])
-    generators = {"g": kg[1:], "h": h, "k": kg[0]}
-    return generators
-
-
-async def protocol_4_prover(g_hat, k, Q, L_tilde, z_hat, gf, proof={}, round_i=0):
-    """Non-interactive version of Protocol 4 from Section 4.2: Prover's side"""
-
-    # Step 5: Prover calculates A, B
-    half = len(g_hat) // 2
-    g_hat_l = g_hat[:half]
-    g_hat_r = g_hat[half:]
-    z_hat_l = z_hat[:half]
-    z_hat_r = z_hat[half:]
-    logger_cs_mpc_cb.debug("Calculate A_i, B_i.")
-    A = await vector_commitment(
-        z_hat_l, _int(L_tilde([0] * half + z_hat_l)), g_hat_r, k
-    )
-    B = await vector_commitment(
-        z_hat_r, _int(L_tilde(z_hat_r + [0] * half)), g_hat_l, k
-    )
-    logger_cs_mpc_cb.debug(f"Provers opened A{str(round_i)}, B{str(round_i)}")
-
-    proof["A" + str(round_i)] = A
-    proof["B" + str(round_i)] = B
-
-    # Step 6: Prover calculates challenge
-    order = k.order
-    # Hash A, B and all public elements of Protocol 4
-
-    # input_list = [A, B, g_hat, k, Q, L_tilde]
-    if isinstance(A, EllipticCurveElement):
-        input_list = [A.to_affine(), B.to_affine(), g_hat, k, Q.to_affine(), L_tilde]
-    else:
-        input_list = [A, B, g_hat, k, Q, L_tilde]
-
-    logger_cs_mpc_cb_hin.debug(
-        f"Method protocol_4_prover: Before fiat_shamir_hash, input_list=\n{input_list}"
-    )
-    c = pivot.fiat_shamir_hash(input_list, order)
-    logger_cs_mpc_cb_hout.debug(f"After hash, hash=\n{c}")
-
-    # Step 7: Prover calculates following public values
-    logger_cs_mpc_cb.debug("Calculate g_prime.")
-    g_prime = [(g_hat_l[i] ** c) * g_hat_r[i] for i in range(half)]
-    logger_cs_mpc_cb.debug("Calculate Q_prime.")
-    Q_prime = A * (Q ** c) * (B ** (c ** 2))
-
-    assert (
-        L_tilde.constant == 0
-    ), "Next line assumes L_tilde is a linear form, not affine form."
-    c_L_tilde_l_coeffs = [coeff * gf(c) for coeff in L_tilde.coeffs[:half]]
-    L_prime = pivot.LinearForm(c_L_tilde_l_coeffs) + pivot.LinearForm(
-        L_tilde.coeffs[half:]
-    )
-
-    # Step 8: Prover calculates z_prime and tests if recursion is required (if z' in Z or Z^2)
-    z_prime = [z_hat_l[i] + c * z_hat_r[i] for i in range(half)]
-    if len(z_prime) <= 2:
-        z_prime = await mpc.output(
-            z_prime
-        )  # TODO: perhaps not necessary to open z_prime; double check
-        logger_cs_mpc_cb.debug(f"Provers opened z_prime")
-        proof["z_prime"] = z_prime
-        return proof
-    else:
-        # Step 9: Prover sends z_prime and starts recursion of protocol 4
-        round_i += 1
-        proof = await protocol_4_prover(
-            g_prime, k, Q_prime, L_prime, z_prime, gf, proof, round_i
-        )
-        return proof
-
-
-async def protocol_5_prover(generators, P, L, y, x, gamma, gf):
-    secfld = type(x[0])
-    g = generators["g"]
-    h = generators["h"]
-    k = generators["k"]
-
-    proof = {}
-
-    # Public parameters
-    n = len(x)
-    L, y = pivot.affine_to_linear(L, y, n)
-    L.constant = await mpc.output(L.constant)
-
-    # Open P, y, L to ensure consistent output of Fiat-Shamir hash
-    y = await mpc.output(y)
-    assert (
-        bin(n + 1).count("1") == 1
-    ), "This implementation requires n+1 to be power of 2 (else, use padding with zeros)."
-    logger_cs_mpc_cb.debug(f"Provers opened y.")
-
-    # Non-interactive proof
-    # Step 1: Prover calculates ("announcement") t, A
-    order = gf.order
-    r = list(mpc._random(secfld) for i in range(n))
-    rho = mpc._random(secfld)
-    t = L(r)
-    logger_cs_mpc_cb.debug("Calculate A.")
-    A = await vector_commitment(r, rho, g, h)
-    t = await mpc.output(t)
-    logger_cs_mpc_cb.debug(f"Provers opened t, A.")
-    proof["t"] = t
-    proof["A"] = A
-
-    # Step 2: Prover computes challenge
-    # input_list = [t, A, generators, P, L, y]
-    if isinstance(A, EllipticCurveElement):
-        input_list = [t, A.to_affine(), generators, P.to_affine(), L, y]
-    else:
-        input_list = [t, A, generators, P, L, y]
-
-    logger_cs_mpc_cb_hin.debug(
-        f"Method protocol_5_prover: Before fiat_shamir_hash, input_list=\n{input_list}"
-    )
-    c0 = pivot.fiat_shamir_hash(
-        input_list + [0] + ["First hash of compressed pivot"], order
-    )
-    c1 = pivot.fiat_shamir_hash(
-        input_list + [1] + ["First hash of compressed pivot"], order
-    )
-    logger_cs_mpc_cb_hout.debug(f"After hash, hash=\n{c0}, {c1}")
-
-    # Step 3: Prover calculates
-    z = [c0 * x_i + r[i] for i, x_i in enumerate(x)]
-    phi = c0 * gamma + rho
-    z_hat = z + [phi]
-
-    # Step 4: Prover calculates following public variables
-    g_hat = g + [h]
-    logger_cs_mpc_cb.debug("Calculate Q.")
-    Q = A * (P ** c0) * (k ** _int(c1 * (c0 * y + t)))
-    L_tilde = pivot.LinearForm(L.coeffs + [0]) * c1
-    # assert L(z)*c1 == L_tilde(z_hat)
-    proof = await protocol_4_prover(g_hat, k, Q, L_tilde, z_hat, gf, proof)
-    return proof
-
-
-def calculate_fgh_polys(a, b, c, gf, secfld):
-    # Calculate random polynomials f, g, h
-    r_a = mpc._random(secfld)
-    r_b = mpc._random(secfld)
-    logger_cs_mpc_cb.debug("Calculate f_poly.")
-    f_poly = qc.Poly(qc.lagrange_interp_ff(a + [r_a], gf))
-    logger_cs_mpc_cb.debug("Calculate g_poly.")
-    g_poly = qc.Poly(qc.lagrange_interp_ff(b + [r_b], gf))
-    logger_cs_mpc_cb.debug("Calculate h_poly.")
-    h_poly = f_poly * g_poly
-    logger_cs_mpc_cb.debug("Done calculating f, g, h.")
-    # assert c == [h_poly.eval(i+1) for i in range(m)], "Evaluations of h at 1..m not equal to vector c"
-    return f_poly, g_poly, h_poly
-
-
-# START########################## from mpyc.thresha -> modified _recombination_vector ##########
-import functools
-
-
-@functools.lru_cache(maxsize=None)
-def _recombination_vectors(field, xs, xr):
-    """Compute and store recombination vectors.
-
-    Recombination vectors depend on the field, the x-coordinates xs
-    of the shares and the x-coordinates xr of the recombination points.
-    """
-    modulus = field.modulus
-    xs = [x % modulus for x in xs]  # also for conversion from
-    xr = [x % modulus for x in xr]  # int to type(modulus)
-    d = [None] * len(xs)
-    for i, x_i in enumerate(xs):
-        q = 1
-        for j, x_j in enumerate(xs):
-            if i != j:
-                q *= x_i - x_j
-                q %= modulus
-        d[i] = q
-    matrix = [None] * len(xr)
-    for r, x_r in enumerate(xr):
-        matrix[r] = [None] * len(xs)
-        p = 1
-        for j, x_j in enumerate(xs):
-            p *= x_r - x_j
-            p %= modulus
-        p = field(p)
-        for i, x_i in enumerate(xs):
-            matrix[r][i] = (p / field((x_r - x_i) * d[i])).value
-    return matrix
-
-
-def recombine(field, points, x_rs=0):  ##### ONLY for shares that are single numbers
-    """Recombine shares given by points into secrets.
-
-    Recombination is done for x-coordinates x_rs.
-    """
-    xs, shares = list(zip(*points))
-    if not isinstance(x_rs, list):
-        x_rs = (x_rs,)
-    m = len(shares)
-    width = len(x_rs)
-    T_is_field = isinstance(shares[0], field)  # all elts assumed of same type
-    vector = _recombination_vectors(field, xs, tuple(x_rs))
-    sums = [0] * width
-    for i in range(m):
-        s = shares[i]
-        if T_is_field:
-            s = s.value
-        # type(s) is int or gfpx.Polynomial
-        for r in range(width):
-            sums[r] += s * vector[r][i]
-    for r in range(width):
-        sums[r] = field(sums[r])
-    if isinstance(x_rs, tuple):
-        return sums[0]
-
-    return sums
-
-
-# END########################## from mpyc.thresha -> modified _recombination_vector ##########
 
 
 async def protocol_8_excl_pivot_prover(generators, circuit, x, gf, use_koe=False):
@@ -312,7 +81,7 @@ async def protocol_8_excl_pivot_prover(generators, circuit, x, gf, use_koe=False
 
     if use_koe:
         S = range(len(z))
-        z_commitment_P, z_commitment_pi = koe.restriction_argument_prover(
+        z_commitment_P, z_commitment_pi = await koe_restriction_argument_prover(
             S, z, gamma, pp
         )
         z_commitment = {"P": z_commitment_P, "pi": z_commitment_pi}
@@ -385,48 +154,8 @@ async def protocol_8_excl_pivot_prover(generators, circuit, x, gf, use_koe=False
     return proof, z_commitment, L, z, gamma
 
 
-async def prove_linear_form_eval(g, h, P, L, y, x, gamma, gf):
-    """Sigma protocol Pi_s (protocol 2) from AC20.
-
-    Non-interactive version.
-    """
-    secfld = type(x[0])
-    n = len(x)
-    L, y = pivot.affine_to_linear(L, y, n)
-    y = await mpc.output(y)
-
-    r = list(mpc._random(secfld) for i in range(n))
-    rho = mpc._random(secfld)
-
-    t = L(r)
-    A = await vector_commitment(r, rho, g, h)
-    t = await mpc.output(t)
-    logger_cs_mpc_cb.debug(f"Provers opened t.")
-    logger_cs_mpc_cb.debug(f"Provers opened A.")
-
-    if isinstance(A, EllipticCurveElement):
-        input_list = [t, A.to_affine(), g, h, P.to_affine(), L, y]
-    else:
-        input_list = [t, A, g, h, P, L, y]
-    logger_cs_mpc_cb_hin.debug(f"Method prove_linear_form_eval: input_list={input_list}.")
-    c = pivot.fiat_shamir_hash(input_list, gf.order)
-    logger_cs_mpc_cb_hout.debug(f"After hash, hash=\n{c}")
-    z = [c * x_i + r[i] for i, x_i in enumerate(x)]
-    # phi = (c*gamma + rho) % gf.order
-    phi = c * gamma + rho
-
-    z = await mpc.output(z)
-    phi = await mpc.output(phi)
-
-    return (
-        z,
-        phi,
-        c,
-    )  # TODO: check if it's correct to return c as well (Required to reconstruct A in non-interactive proof)
-
-
 async def circuit_sat_prover(
-    generators, code, x, gf, pivot_choice=cs.PivotChoice.compressed
+    generators, circuit, x, gf, pivot_choice=cs.PivotChoice.compressed
 ):
     """Non-interactive implementation of Protocol 8, prover-side,
     including Nullity using compressed pivot (Protocol 5).
@@ -435,7 +164,7 @@ async def circuit_sat_prover(
 
     logger_cs_mpc_cb.debug(f"Start protocol 8, excluding pivot proof.")
     proof, z_commitment, L, z, gamma = await protocol_8_excl_pivot_prover(
-        generators, code, x, gf
+        generators, circuit, x, gf
     )
 
     if pivot_choice == cs.PivotChoice.compressed:
@@ -452,7 +181,7 @@ async def circuit_sat_prover(
         L = proof["L"]
         P = proof["z_commitment"]["P"]
         pi = proof["z_commitment"]["pi"]
-        pivot_proof, u = koe.opening_linear_form_prover(L, z, gamma, generators, P, pi)
+        pivot_proof, u = await koe_opening_linear_form_prover(L, z, gamma, generators, P, pi)
     else:
         raise NotImplementedError
     proof["pivot_proof"] = pivot_proof
@@ -460,11 +189,3 @@ async def circuit_sat_prover(
     return proof
 
 
-# TODO-list
-# TS-1: Include option that provers don't learn output y (or multiple outputs) and only keep y in secret shared form while proving.
-# TS-1: Do y and outputs have to be part of the hash? its in second hash of protocol 8 (circuit sat) and hash of protocol 5 (compressed pivot)
-# TS-1: Can the prove be forged when y is not part of the hash?
-# TS-1: Avoid double work: compute z_commitment once, don't compute P (equal to z_commitment) again
-# TS-1: Enable sectype operations for SecureEdwardsGroup as it does not inherit from Share but from Point
-# * Also in _int() helper method?
-# TS-2: In method output(), also catch SecEdwardsGroup types (check spelling)

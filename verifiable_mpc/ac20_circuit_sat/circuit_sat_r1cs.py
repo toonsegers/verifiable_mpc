@@ -28,7 +28,7 @@ import verifiable_mpc.ac20_circuit_sat.knowledge_of_exponent as koe
 import verifiable_mpc.tools.code_to_r1cs as c2r
 import verifiable_mpc.tools.qap_creator as qc
 import sec_groups.ellcurves as ell
-import sec_groups.pairing as pairing
+# import sec_groups.pairing as pairing
 
 prng = SystemRandom()
 
@@ -62,36 +62,20 @@ def create_generators(g_length, pivot_choice, group=None, progress_bar=False):
     progress_bar -- boolean to indicate usage of progress bar
 
     """
-
     def create_g_h():
-        if progress_bar:
-            toolbar_width = g_length
-            sys.stdout.write("Generating keys: [%s]" % (" " * toolbar_width))
-            sys.stdout.flush()
-            sys.stdout.write(
-                "\b" * (toolbar_width + 1)
-            )  # return to start of line, after '['
-
-        assert (
-            group is not None
-        ), "Parameter `group` is required for (compressed) pivot based on discrete log assumption."
+        # Parameter `group` is required for (compressed) pivot 
+        assert group is not None
         h = group.generator
         random_exponents = []
-        while len(set(random_exponents)) != g_length:
-            random_exponents = list(
-                prng.randrange(1, group.order) for i in range(g_length)
-            )
+        random_exponents = list(prng.randrange(1, group.order) for i in range(g_length))
 
         # g = [h**i for i in random_exponents]
         g = []
-        for i in random_exponents:
-            g.append(h ** i)
+        n = len(random_exponents)
+        for i, r in enumerate(random_exponents):
+            g.append(h ** r)
             if progress_bar:
-                sys.stdout.write("-")
-                sys.stdout.flush()
-
-        if progress_bar:
-            sys.stdout.write("]\n")  # this ends the progress bar
+                print(f"Generating keys: {round(100*i/(n+1))}%", end="\r")            
 
         return g, h
 
@@ -106,10 +90,8 @@ def create_generators(g_length, pivot_choice, group=None, progress_bar=False):
         group1 = group[0]
         group2 = group[1]
         order = group1.order
-        # _g1 = bn256.curve_G
-        # _g2 = bn256.twist_G
-        _g1 = group1.generator
-        _g2 = group2.generator
+        _g1 = group1.generator  # BN256 regular
+        _g2 = group2.generator  # BN256 twist 
         generators = koe.trusted_setup(_g1, _g2, g_length, order, progress_bar)
     else:
         raise NotImplementedError

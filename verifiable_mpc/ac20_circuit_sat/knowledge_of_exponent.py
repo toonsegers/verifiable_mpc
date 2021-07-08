@@ -53,14 +53,6 @@ def _pairing(a, b):
 
 
 def trusted_setup(_g1, _g2, n, order, progress_bar=False):
-    if progress_bar:
-        toolbar_width = 2 * n
-        sys.stdout.write("Generating keys: [%s]" % (" " * toolbar_width))
-        sys.stdout.flush()
-        sys.stdout.write(
-            "\b" * (toolbar_width + 1)
-        )  # return to start of line, after '['
-
     g_exp = prng.randrange(1, order)
     alpha = prng.randrange(order)
     z = prng.randrange(order)
@@ -79,18 +71,14 @@ def trusted_setup(_g1, _g2, n, order, progress_bar=False):
         pp_rhs.append(g2_base)
 
         if progress_bar:
-            sys.stdout.write("-")
-            sys.stdout.flush()
-
-    if progress_bar:
-        sys.stdout.write("]\n")  # this ends the progress bar
+            print(f"Generating keys: {round(100*i/(2*n+1))}%", end="\r")
 
     pp = {"pp_lhs": pp_lhs, "pp_rhs": pp_rhs}
     return pp
 
 
 def restriction_argument_prover(S, x, gamma, pp):
-    """ Resriction argument from [Gro10]: Prover's side
+    """Resriction argument from [Gro10]: Prover's side.
 
     Extension of the Knowledge Commitment Scheme, but proofs that a subset
     of indices S of {0, ..., n-1}, corresponding to vector x, was used.
@@ -116,7 +104,7 @@ def restriction_argument_verifier(P, pi, pp):
 
 
 def opening_linear_form_prover(L, x, gamma, pp, P=None, pi=None):
-    """ Opening linear forms using an adaptation of the multiplication argument
+    """Opening linear forms using an adaptation of the multiplication argument
     of [Gro10].
 
     """

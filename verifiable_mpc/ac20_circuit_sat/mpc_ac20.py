@@ -6,19 +6,16 @@ to Plug & Play Secure Algorithmics''
 
 """
 
-import pprint
-
-import verifiable_mpc.ac20_circuit_sat.pivot as pivot
-import verifiable_mpc.ac20_circuit_sat.circuit_sat_r1cs as cs
-import verifiable_mpc.ac20_circuit_sat.knowledge_of_exponent as koe
-from verifiable_mpc.ac20_circuit_sat.pivot import _int as _int
+import mpyc.mpctools as mpctools
 from mpyc.runtime import mpc, logging
 from sec_groups.fingroups import EllipticCurveElement
 from sec_groups.secgroups import secure_repeat_public_base_public_output as secure_repeat
 import verifiable_mpc.tools.qap_creator as qc
+import verifiable_mpc.ac20_circuit_sat.pivot as pivot
+import verifiable_mpc.ac20_circuit_sat.circuit_sat_r1cs as cs
+import verifiable_mpc.ac20_circuit_sat.knowledge_of_exponent as koe
+from verifiable_mpc.ac20_circuit_sat.pivot import _int as _int
 
-
-pp = pprint.PrettyPrinter(indent=4)
 
 logger_cs_mpc = logging.getLogger("cs_mpc")
 logger_cs_mpc.setLevel(logging.INFO)
@@ -28,6 +25,10 @@ logger_cs_mpc_hin.setLevel(logging.INFO)
 
 logger_cs_mpc_hout = logging.getLogger("cs_mpc_hash_outputs")
 logger_cs_mpc_hout.setLevel(logging.INFO)
+
+
+def list_mul(x):
+    return mpctools.reduce(type(x[0]).operation, x)
 
 
 def vector_commitment(x, gamma, g, h):
@@ -41,6 +42,7 @@ def vector_commitment(x, gamma, g, h):
 
 
 async def create_generators(group, sectype, input_length):
+    logger_cs_mpc.warning("Circuit reconstruction using R1CS is deprecated. Consider using circuit_builder.")
     # TODO: consider setup to exclude trapdoors
     h = group.generator
     random_exponents = [mpc._random(sectype) for i in range(input_length+1)]
@@ -49,10 +51,94 @@ async def create_generators(group, sectype, input_length):
     return generators
 
 
-async def protocol_4_prover(g_hat, k, Q, L_tilde, z_hat, gf, proof={}, round_i=0):
-    """ Non-interactive version of Protocol 4 from Section 4.2: Prover's side
+async def koe_trusted_setup(group, sectype, input_length, progress_bar=False):
+    group1 = group[0]
+    group2 = group[1]
+    order = group1.order
+    _g1 = group1.generator  # BN256 regular
+    _g2 = group2.generator  # BN256 twist 
+
+    g_exp = mpc._random(sectype)  # TODO: sample > 0
+    alpha = mpc._random(sectype)  
+    z = mpc._random(sectype)
+    g1 = await secure_repeat(_g1, g_exp)
+    g2 = await secure_repeat(_g2, g_exp * alpha)
+
+    pp_lhs = []
+    pp_rhs = []
+    g1_base = g1
+    g2_base = g2
+    for i in range(2 * input_length):
+        g1 = await secure_repeat(g1, z)
+        g2 = await secure_repeat(g2, z)
+
+        pp_lhs.append(g1_base)
+        pp_rhs.append(g2_base)
+
+        if progress_bar:
+            print(f"Generating keys: {round(100*i/(2*input_length+1))}%", end="\r")
+
+    pp = {"pp_lhs": pp_lhs, "pp_rhs": pp_rhs}
+    return pp
+
+
+async def koe_restriction_argument_prover(S, x, gamma, pp):
+    """Resriction argument from [Gro10]: Prover's side.
+
+    Extension of the Knowledge Commitment Scheme, but proofs that a subset
+    of indices S of {0, ..., n-1}, corresponding to vector x, was used.
+    """
+
+    # Prover commits only to S-indices of x with (new) commitment P, with secret random gamma
+    # P = (pp["pp_lhs"][0] ** gamma) * list_mul([pp["pp_lhs"][i + 1] ** x[i] for i in S])
+    P = (await secure_repeat(pp["pp_lhs"][0], gamma)) * list_mul([await secure_repeat(pp["pp_lhs"][i + 1], x[i]) for i in S])
+
+    # Trusted party or verifier samples beta; only required in designated verifier scenario
+    # beta = prng.randrange(1, order)
+    # sigma = (g1**beta, [(g2**(z**i))**beta for i in S])
+
+    # Prover computes pi^alpha (slight deviation from Thomas' notes, who computes pi)
+    # pi = (pp["pp_rhs"][0] ** gamma) * list_mul([pp["pp_rhs"][i + 1] ** x[i] for i in S])
+    pi = (await secure_repeat(pp["pp_rhs"][0], gamma)) * list_mul([await secure_repeat(pp["pp_rhs"][i + 1], x[i]) for i in S])
+    return P, pi
+
+
+async def koe_opening_linear_form_prover(L, x, gamma, pp, P=None, pi=None):
+    """Opening linear forms using an adaptation of the multiplication argument
+    of [Gro10].
 
     """
+    proof = {}
+    n = len(x)
+    S = range(n)
+    # """ Run Restriction argument on (P, {1, ..., n}; x, gamma) to show that
+    # (P, P_bar) is indeed a commitment to vector x in Z_q
+    # """
+    if P is None:
+        P, pi = await koe_restriction_argument_prover(S, x, gamma, pp)
+    proof["P"] = P
+    proof["pi"] = pi
+
+    # Prover computes coefficients of c_poly and Q, sends Q to verifier
+    u = L(x)
+    L_linear, u_linear = pivot.affine_to_linear(L, u, n)
+
+    c_poly_lhs = qc.Poly([gamma] + [x_i for x_i in x])
+    c_poly_rhs = qc.Poly([L_linear.coeffs[n - (j + 1)] for j in range(n)])
+    c_poly = c_poly_lhs * c_poly_rhs
+
+    # assert u_linear == c_poly.coeffs[n], "L(x) not equal to n-th coefficient of c_poly"
+    c_bar = c_poly.coeffs
+    c_bar[n] = 0  # Ensure c_bar[n] is also a sectype (for secure_repeat)
+    assert len(pp["pp_lhs"]) == 2 * n
+    # Q = list_mul([g_i ** (-1 * c_bar[i]) for i, g_i in enumerate(pp["pp_lhs"])])
+    Q = list_mul([await secure_repeat(g_i, (c_bar[i] * -1)) for i, g_i in enumerate(pp["pp_lhs"])])
+    proof["Q"] = Q
+    return proof, u
+
+
+async def protocol_4_prover(g_hat, k, Q, L_tilde, z_hat, gf, proof={}, round_i=0):
+    """ Non-interactive version of Protocol 4 from Section 4.2: Prover's side."""
 
     # Step 5: Prover calculates A, B
     half = len(g_hat) // 2
@@ -323,7 +409,7 @@ async def protocol_8_excl_pivot_prover(generators, code, x, gf, use_koe=False):
 
     if use_koe:
         S = range(len(z))
-        z_commitment_P, z_commitment_pi = koe.restriction_argument_prover(
+        z_commitment_P, z_commitment_pi = await koe_restriction_argument_prover(
             S, z, gamma, pp
         )
         z_commitment = {"P": z_commitment_P, "pi": z_commitment_pi}
@@ -471,7 +557,7 @@ async def circuit_sat_prover(
         L = proof["L"]
         P = proof["z_commitment"]["P"]
         pi = proof["z_commitment"]["pi"]
-        pivot_proof, u = koe.opening_linear_form_prover(L, z, gamma, generators, P, pi)
+        pivot_proof, u = await koe_opening_linear_form_prover(L, z, gamma, generators, P, pi)
     else:
         raise NotImplementedError
     proof["pivot_proof"] = pivot_proof

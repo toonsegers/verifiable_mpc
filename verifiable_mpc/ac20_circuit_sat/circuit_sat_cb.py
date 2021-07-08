@@ -12,10 +12,10 @@ Example:
 
 import os
 import sys
-from enum import Enum
+# from enum import Enum
 import logging
 from random import SystemRandom
-import re
+# import re
 
 project_root = sys.path.append(os.path.abspath(".."))
 if project_root not in sys.path:
@@ -33,10 +33,10 @@ from verifiable_mpc.ac20_circuit_sat.circuit_sat_r1cs import (
 )
 
 # from mpyc.thresha import _recombination_vector as lagrange   ## see below
-import verifiable_mpc.tools.code_to_r1cs as c2r
-import verifiable_mpc.tools.qap_creator as qc
+# import verifiable_mpc.tools.code_to_r1cs as c2r
+# import verifiable_mpc.tools.qap_creator as qc
 import sec_groups.ellcurves as ell
-import sec_groups.pairing as pairing
+# import sec_groups.pairing as pairing
 import verifiable_mpc.ac20_circuit_sat.circuit_builder as cb
 
 prng = SystemRandom()
