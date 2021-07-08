@@ -22,12 +22,13 @@ project_root = sys.path.append(os.path.abspath(".."))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-
-import verifiable_mpc.ac20_circuit_sat.circuit_sat_r1cs as cs
 from mpyc.finfields import GF
-from sec_groups.tools.find_primes import find_safe_primes
+
+import verifiable_mpc.ac20_circuit_sat.circuit_sat_cb as cs
+import verifiable_mpc.ac20_circuit_sat.circuit_builder as cb
 from sec_groups.fingroups import QuadraticResidue, EllipticCurve
 import sec_groups.ellcurves as ell
+from sec_groups.tools.find_primes import find_safe_primes
 
 
 pp = pprint.PrettyPrinter(indent=4)
@@ -61,29 +62,39 @@ def main(pivot_choice):
         gf = GF(modulus=group.order)
 
     # Inputs: Python code to evaluate and x-vector.
-    code = """
-def qeval(x1, x2):
-    z = 2*x1 + 3*x2
-    y = x1**3
-    return y
-"""
-    x = [gf(1), gf(2)]
-    x, code, g_length = cs.input_length_power_of_2(x, code)
-    print(
-        "Code to prove circuit suitasfiability for (after padding to ensure length(z) + 1 is power of 2):"
-    )
-    print(code)
-    print("Length of commitment vector=", g_length)
+    circuit = cb.Circuit()
+    b = cb.CircuitVar(gf(1), circuit, "b")
+    c = cb.CircuitVar(gf(2), circuit, "c")
+
+    d = c + c + c * c + c * c * 1 + 1 + b 
+    e = d*d + c + 10
+    f = d*c + e
+    f.label_output("f")
+    print("f=", f)
+    g = f + 100
+    g.label_output("g")
+    print("g=", g)
+    h = g != 10
+    h.label_output("h")
+
+    x = circuit.initial_inputs()
+    # Check if resulting commitment vector is of appropriate length.
+    check, padding, g_length = cs.check_input_length_power_of_2(x, circuit)
+    # Add unused variables to pad the length of the commitment vector to power of 2 minus 1.
+    dummies = [cb.CircuitVar(0, circuit, "unused_"+str(i)) for i in range(padding)]
+    x = circuit.initial_inputs()
+    print("Length of input vector including auxiliary inputs (witnesses for special gates): ", len(x))
+    print("Length of commitment vector: ", g_length)
 
     generators = cs.create_generators(g_length, pivot_choice, group, progress_bar=True)
     print("Generators created/trusted setup done.")
 
     print("Start non-interactive circuit satisfiability proof with compressed pivot. ")
-    proof = cs.circuit_sat_prover(generators, code, x, gf, pivot_choice)
-    print("Proof:")
-    pp.pprint(proof)
+    proof = cs.circuit_sat_prover(generators, circuit, x, gf, pivot_choice)
+    # print("Proof:")
+    # pp.pprint(proof)
     print("Start verification.")
-    verification = cs.circuit_sat_verifier(proof, generators, code, gf, pivot_choice)
+    verification = cs.circuit_sat_verifier(proof, generators, circuit, gf, pivot_choice)
     print("Verification checks: ")
     pp.pprint(verification)
 
