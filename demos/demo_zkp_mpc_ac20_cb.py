@@ -38,20 +38,36 @@ from sec_groups.tools.find_primes import find_safe_primes
 prng = SystemRandom()
 pp = pprint.PrettyPrinter(indent=4)
 
-PIVOT = (
-    cs.PivotChoice.compressed
-)  # pivot, compressed; TODO: koe is not supported, to be added (with BN256 curves)
+PIVOT = cs.PivotChoice.compressed  
 GROUP = "QR"
 
 
 async def main(pivot_choice, group_choice, n):
+    await mpc.start()
+
     # General setup
-    if group_choice == "Elliptic":
+    if pivot_choice == cs.PivotChoice.koe:
+        # TODO: improve syntax for passing two groups to create_generators
+        group1 = EllipticCurve(ell.BN256, ell.WEI_HOM_PROJ, ell.Weierstr_HomProj_Arithm)
+        group2 = EllipticCurve(ell.BN256_TWIST, ell.WEI_HOM_PROJ, ell.Weierstr_HomProj_Arithm)
+        group1.is_additive = False
+        group1.is_multiplicative = True
+        group2.is_additive = False
+        group2.is_multiplicative = True
+        group = [group1, group2]
+        order = group1.order
+
+        sec_grp1 = SecureGroup(group1)
+        sec_grp2 = SecureGroup(group2)
+        assert sec_grp1.group.order == sec_grp2.group.order
+        secfld = mpc.SecFld(modulus=sec_grp1.group.order)
+        gf = secfld.field    
+    elif group_choice == "Elliptic":
+
         group = EllipticCurve(ell.ED25519, ell.ED_HOM_PROJ, ell.Edwards_HomProj_Arithm)
         group.is_additive = False
         group.is_multiplicative = True
 
-        await mpc.start()
         sec_grp = SecureGroup(group, group.arithm)
         secfld = mpc.SecFld(modulus=sec_grp.group.order)
         gf = secfld.field
@@ -59,16 +75,12 @@ async def main(pivot_choice, group_choice, n):
         order, modulus = find_safe_primes(2048)
         group = QuadraticResidue(modulus=modulus)
 
-        await mpc.start()
         sec_grp = SecureGroup(group)
         secfld = mpc.SecFld(modulus=sec_grp.group.order)
         gf = secfld.field
 
     else:
         raise ValueError
-
-    assert sec_grp.group.is_multiplicative
-    print(f"Group: {GROUP}")
 
     circuit = cb.Circuit()
     b = cb.CircuitVar(secfld(1), circuit, "b")
@@ -89,11 +101,17 @@ async def main(pivot_choice, group_choice, n):
     # Add unused variables to pad the length of the commitment vector to power of 2 minus 1.
     dummies = [cb.CircuitVar(0, circuit, "unused_"+str(i)) for i in range(padding)]
     x = circuit.initial_inputs()
+    
     print("Length of input vector including auxiliary inputs (witnesses for special gates): ", len(x))
     print("Length of commitment vector: ", g_length)
 
     print("Create generators.")
-    generators = await mpc_cs.create_generators(group, secfld, g_length)
+    if pivot_choice in [cs.PivotChoice.pivot, cs.PivotChoice.compressed]:
+        generators = await mpc_cs.create_generators(group, secfld, g_length)
+    elif pivot_choice in [cs.PivotChoice.koe]:
+        generators = await mpc_cs.koe_trusted_setup(group, secfld, g_length, progress_bar=True)
+    else:
+        raise NotImplementedError
 
     print("Start non-interactive circuit satisfiability proof with compressed pivot. ")
     proof = await mpc_cs.circuit_sat_prover(generators, circuit, x, gf, pivot_choice)
@@ -122,10 +140,15 @@ if __name__ == "__main__":
         action="store_true",
         help="use elliptic curve groups (default QR groups)",
     )
-    parser.set_defaults(n=100)
+    parser.add_argument('--koe', action='store_true',
+                        help='use pivot based on Knowledge-of-Exponent assumption (and BN256 curves)')
+    parser.set_defaults(n=10)
     args = parser.parse_args()
     if args.elliptic:
         GROUP = "Elliptic"
+    elif args.koe:
+        PIVOT = cs.PivotChoice.koe
+
     verification = mpc.run(main(PIVOT, GROUP, args.n))
 
 

@@ -77,8 +77,6 @@ async def main(pivot_choice, group_choice, n):
     else:
         raise ValueError
 
-    print(f"Group: {GROUP}")
-
     code = f"""
 def qeval(x1, x2):
     z = 2*x1 + 3*x2
