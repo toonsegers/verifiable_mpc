@@ -7,7 +7,7 @@ if project_root not in sys.path:
 from random import SystemRandom
 import unittest
 
-import verifiable_mpc.ac20_circuit_sat.pivot as pivot
+import verifiable_mpc.ac20.pivot as pivot
 from mpyc.finfields import GF, FiniteFieldElement
 from sec_groups.tools.find_primes import find_safe_primes
 from sec_groups.fingroups import QuadraticResidue

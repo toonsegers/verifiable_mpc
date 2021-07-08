@@ -21,14 +21,13 @@ project_root = sys.path.append(os.path.abspath(".."))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-import verifiable_mpc.ac20_circuit_sat.pivot as pivot
-import verifiable_mpc.ac20_circuit_sat.compressed_pivot as compressed_pivot
-import verifiable_mpc.ac20_circuit_sat.knowledge_of_exponent as koe
-#from mpyc.thresha import _recombination_vector as lagrange   ## see below
+import verifiable_mpc.ac20.pivot as pivot
+import verifiable_mpc.ac20.compressed_pivot as compressed_pivot
+import verifiable_mpc.ac20.knowledge_of_exponent as koe
+from verifiable_mpc.ac20.recombine import _recombination_vectors
 import verifiable_mpc.tools.code_to_r1cs as c2r
 import verifiable_mpc.tools.qap_creator as qc
 import sec_groups.ellcurves as ell
-# import sec_groups.pairing as pairing
 
 prng = SystemRandom()
 
@@ -266,10 +265,9 @@ def mul_gates_for_splitting(flatcode, varnames, n):
     return requires_splitting
 
 
-import verifiable_mpc.ac20_circuit_sat.mpc_ac20  # do this here to avoid circular import issues
-#lagrange =  verifiable_mpc.ac20_circuit_sat.mpc_ac20._recombination_vector  # TODO: refactor 
 def lagrange(gf, lagr_range, c):
-    return verifiable_mpc.ac20_circuit_sat.mpc_ac20._recombination_vectors(gf, lagr_range, (c,))[0]
+    return _recombination_vectors(gf, lagr_range, (c,))[0]
+
 
 def create_fgh_linear_forms(
     r1cs, c, varnames, flatcode, mul_indices_of_flatcode, n, m, gf

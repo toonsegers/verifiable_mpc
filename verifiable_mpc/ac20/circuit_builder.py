@@ -3,9 +3,9 @@ from enum import Enum
 from mpyc.finfields import GF, FiniteFieldElement, PrimeFieldElement
 from mpyc.runtime import mpc
 from mpyc.sectypes import SecureFiniteField, SecureInteger
-import verifiable_mpc.ac20_circuit_sat.mpc_ac20
-from verifiable_mpc.ac20_circuit_sat.pivot import AffineForm, LinearForm
-from verifiable_mpc.ac20_circuit_sat.circuit_sat_r1cs import calculate_fgh_polys
+import verifiable_mpc.ac20.mpc_ac20
+from verifiable_mpc.ac20.pivot import AffineForm, LinearForm
+from verifiable_mpc.ac20.circuit_sat_r1cs import calculate_fgh_polys
 import verifiable_mpc.tools.qap_creator as qc
 from random import SystemRandom
 
@@ -495,7 +495,7 @@ def calculate_circuit_forms(circuit):
 
 
 def lagrange(gf, lagr_range, c):
-    return verifiable_mpc.ac20_circuit_sat.mpc_ac20._recombination_vectors(gf, lagr_range, (c,))[0]
+    return verifiable_mpc.ac20.mpc_ac20._recombination_vectors(gf, lagr_range, (c,))[0]
 
 
 # TODOs:

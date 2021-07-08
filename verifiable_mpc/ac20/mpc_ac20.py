@@ -11,10 +11,11 @@ from mpyc.runtime import mpc, logging
 from sec_groups.fingroups import EllipticCurveElement
 from sec_groups.secgroups import secure_repeat_public_base_public_output as secure_repeat
 import verifiable_mpc.tools.qap_creator as qc
-import verifiable_mpc.ac20_circuit_sat.pivot as pivot
-import verifiable_mpc.ac20_circuit_sat.circuit_sat_r1cs as cs
-import verifiable_mpc.ac20_circuit_sat.knowledge_of_exponent as koe
-from verifiable_mpc.ac20_circuit_sat.pivot import _int as _int
+import verifiable_mpc.ac20.pivot as pivot
+import verifiable_mpc.ac20.circuit_sat_r1cs as cs
+import verifiable_mpc.ac20.knowledge_of_exponent as koe
+from verifiable_mpc.ac20.recombine import recombine, _recombination_vectors
+from verifiable_mpc.ac20.pivot import _int as _int
 
 
 logger_cs_mpc = logging.getLogger("cs_mpc")
@@ -285,70 +286,6 @@ def calculate_fgh_polys(a, b, c, gf, secfld):
     logger_cs_mpc.debug("Done calculating f, g, h.")
     # assert c == [h_poly.eval(i+1) for i in range(m)], "Evaluations of h at 1..m not equal to vector c"
     return f_poly, g_poly, h_poly
-
-#START########################## from mpyc.thresha -> modified _recombination_vector ##########
-import functools
-   
-    
-@functools.lru_cache(maxsize=None)
-def _recombination_vectors(field, xs, xr):
-    """Compute and store recombination vectors.
-
-    Recombination vectors depend on the field, the x-coordinates xs
-    of the shares and the x-coordinates xr of the recombination points.
-    """
-    modulus = field.modulus
-    xs = [x % modulus for x in xs]  # also for conversion from
-    xr = [x % modulus for x in xr]  # int to type(modulus)
-    d = [None] * len(xs)
-    for i, x_i in enumerate(xs):
-        q = 1
-        for j, x_j in enumerate(xs):
-            if i != j:
-                q *= x_i - x_j
-                q %= modulus
-        d[i] = q
-    matrix = [None] * len(xr)
-    for r, x_r in enumerate(xr):
-        matrix[r] = [None] * len(xs)
-        p = 1
-        for j, x_j in enumerate(xs):
-            p *= x_r - x_j
-            p %= modulus
-        p = field(p)
-        for i, x_i in enumerate(xs):
-            matrix[r][i] = (p / field((x_r - x_i) * d[i])).value
-    return matrix
-
-
-def recombine(field, points, x_rs=0):  ##### ONLY for shares that are single numbers
-    """Recombine shares given by points into secrets.
-
-    Recombination is done for x-coordinates x_rs.
-    """
-    xs, shares = list(zip(*points))
-    if not isinstance(x_rs, list):
-        x_rs = (x_rs,)
-    m = len(shares)
-    width = len(x_rs)
-    T_is_field = isinstance(shares[0], field)  # all elts assumed of same type
-    vector = _recombination_vectors(field, xs, tuple(x_rs))
-    sums = [0] * width
-    for i in range(m):
-        s = shares[i]
-        if T_is_field:
-            s = s.value
-        # type(s) is int or gfpx.Polynomial
-        for r in range(width):
-            sums[r] += s * vector[r][i]
-    for r in range(width):
-        sums[r] = field(sums[r])
-    if isinstance(x_rs, tuple):
-        return sums[0]
-
-    return sums
-
-#END########################## from mpyc.thresha -> modified _recombination_vector ##########
 
 
 async def protocol_8_excl_pivot_prover(generators, code, x, gf, use_koe=False):

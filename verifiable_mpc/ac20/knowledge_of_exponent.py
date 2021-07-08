@@ -19,7 +19,7 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 import mpyc.mpctools as mpctools
-import verifiable_mpc.ac20_circuit_sat.pivot as pivot
+import verifiable_mpc.ac20.pivot as pivot
 import verifiable_mpc.tools.qap_creator as qc
 import sec_groups.pairing as pairing
 

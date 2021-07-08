@@ -26,9 +26,9 @@ from mpyc.runtime import mpc
 from mpyc.finfields import GF, PrimeFieldElement
 from mpyc.sectypes import SecureFiniteField, SecureInteger
 
-import verifiable_mpc.ac20_circuit_sat.circuit_builder as cb
-import verifiable_mpc.ac20_circuit_sat.circuit_sat_cb as cs
-import verifiable_mpc.ac20_circuit_sat.mpc_ac20_cb as mpc_cs
+import verifiable_mpc.ac20.circuit_builder as cb
+import verifiable_mpc.ac20.circuit_sat_cb as cs
+import verifiable_mpc.ac20.mpc_ac20_cb as mpc_cs
 from sec_groups.fingroups import QuadraticResidue, EllipticCurve
 import sec_groups.ellcurves as ell
 from sec_groups.secgroups import SecureGroup, secure_repeat

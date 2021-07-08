@@ -21,10 +21,10 @@ project_root = sys.path.append(os.path.abspath(".."))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-import verifiable_mpc.ac20_circuit_sat.pivot as pivot
-import verifiable_mpc.ac20_circuit_sat.compressed_pivot as compressed_pivot
-import verifiable_mpc.ac20_circuit_sat.knowledge_of_exponent as koe
-from verifiable_mpc.ac20_circuit_sat.circuit_sat_r1cs import (
+import verifiable_mpc.ac20.pivot as pivot
+import verifiable_mpc.ac20.compressed_pivot as compressed_pivot
+import verifiable_mpc.ac20.knowledge_of_exponent as koe
+from verifiable_mpc.ac20.circuit_sat_r1cs import (
     PivotChoice,
     create_generators,
     next_power_of_2,
@@ -33,11 +33,8 @@ from verifiable_mpc.ac20_circuit_sat.circuit_sat_r1cs import (
 )
 
 # from mpyc.thresha import _recombination_vector as lagrange   ## see below
-# import verifiable_mpc.tools.code_to_r1cs as c2r
-# import verifiable_mpc.tools.qap_creator as qc
 import sec_groups.ellcurves as ell
-# import sec_groups.pairing as pairing
-import verifiable_mpc.ac20_circuit_sat.circuit_builder as cb
+import verifiable_mpc.ac20.circuit_builder as cb
 
 prng = SystemRandom()
 

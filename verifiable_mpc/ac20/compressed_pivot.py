@@ -15,7 +15,7 @@ project_root = sys.path.append(os.path.abspath(".."))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-import verifiable_mpc.ac20_circuit_sat.pivot as pivot
+import verifiable_mpc.ac20.pivot as pivot
 from sec_groups.fingroups import EllipticCurveElement
 
 

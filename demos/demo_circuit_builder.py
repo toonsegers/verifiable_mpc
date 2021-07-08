@@ -12,7 +12,7 @@ if project_root not in sys.path:
     
 from mpyc.finfields import GF 
 from mpyc.runtime import mpc
-import verifiable_mpc.ac20_circuit_sat.circuit_builder as cb
+import verifiable_mpc.ac20.circuit_builder as cb
 
 
 if __name__ == "__main__":

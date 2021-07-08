@@ -7,11 +7,11 @@ to Plug & Play Secure Algorithmics''
 """
 
 import mpyc.mpctools as mpctools
-import verifiable_mpc.ac20_circuit_sat.pivot as pivot
-import verifiable_mpc.ac20_circuit_sat.circuit_builder as cb
-import verifiable_mpc.ac20_circuit_sat.circuit_sat_r1cs as cs
+import verifiable_mpc.ac20.pivot as pivot
+import verifiable_mpc.ac20.circuit_builder as cb
+import verifiable_mpc.ac20.circuit_sat_r1cs as cs
 from mpyc.runtime import mpc, logging
-from verifiable_mpc.ac20_circuit_sat.mpc_ac20 import (
+from verifiable_mpc.ac20.mpc_ac20 import (
     list_mul,
     vector_commitment,
     create_generators,

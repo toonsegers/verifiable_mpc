@@ -6,7 +6,7 @@ if project_root not in sys.path:
 
 import unittest
 
-import verifiable_mpc.ac20_circuit_sat.circuit_sat_cb as cs
+import verifiable_mpc.ac20.circuit_sat_cb as cs
 from demos import demo_zkp_ac20
 
 

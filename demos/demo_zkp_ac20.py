@@ -24,8 +24,8 @@ if project_root not in sys.path:
 
 from mpyc.finfields import GF
 
-import verifiable_mpc.ac20_circuit_sat.circuit_sat_cb as cs
-import verifiable_mpc.ac20_circuit_sat.circuit_builder as cb
+import verifiable_mpc.ac20.circuit_sat_cb as cs
+import verifiable_mpc.ac20.circuit_builder as cb
 from sec_groups.fingroups import QuadraticResidue, EllipticCurve
 import sec_groups.ellcurves as ell
 from sec_groups.tools.find_primes import find_safe_primes
