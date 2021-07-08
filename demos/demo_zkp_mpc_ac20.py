@@ -83,7 +83,7 @@ async def main(pivot_choice, group_choice, n):
     f.label_output("f")
     g = f != 100
     g.label_output("g")
-    # h = g >= 10  # comparison requires sectype = mpc.Secint(..)
+    # h = g >= 10  # Comparison requires sectype = mpc.Secint(..). Slow with KoE pivot.
     # h.label_output("h")
 
     x = circuit.initial_inputs()
@@ -106,7 +106,6 @@ async def main(pivot_choice, group_choice, n):
 
     print("Start non-interactive circuit satisfiability proof with compressed pivot. ")
     proof = await mpc_cs.circuit_sat_prover(generators, circuit, x, gf, pivot_choice)
-    # pp.pprint(proof)
 
     print("Start verification.")
     verification = cs.circuit_sat_verifier(proof, generators, circuit, gf, pivot_choice)
