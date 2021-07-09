@@ -14,7 +14,6 @@ https://github.com/ethereum/research/tree/master/zksnark (MIT license)
 (Adapted for this purpose).
 """
 
-from random import SystemRandom
 import pprint
 import sys, os
 
@@ -61,7 +60,6 @@ def main(pivot_choice, group_choice, n):
         group = QuadraticResidue(modulus=modulus)
         gf = GF(modulus=group.order)
 
-    # Inputs: Python code to evaluate and x-vector.
     circuit = cb.Circuit()
     b = cb.CircuitVar(gf(1), circuit, "b")
     c = cb.CircuitVar(gf(2), circuit, "c")
@@ -70,12 +68,10 @@ def main(pivot_choice, group_choice, n):
     e = d*d + c**n + 10
     f = d*c + e
     f.label_output("f")
-    print("f=", f)
-    g = f + 100
+    g = f != 100
     g.label_output("g")
-    print("g=", g)
-    h = g != 10
-    h.label_output("h")
+    # h = g >= 10  # Comparison requires sectype = mpc.Secint(..). Slow with KoE pivot.
+    # h.label_output("h")
 
     x = circuit.initial_inputs()
     # Check if resulting commitment vector is of appropriate length.
@@ -107,16 +103,13 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-n", type=int, help="roughly number of multiplications")
-    parser.add_argument(
-        "--elliptic",
-        action="store_true",
-        help="use elliptic curve groups (default QR groups)",
-    )
+    parser.add_argument("--elliptic", action="store_true", 
+                        help="use elliptic curve groups (default QR groups)")
     parser.add_argument('--basic', action='store_true',
                         help='use basic pivot (not the compressed pivot)')
     parser.add_argument('--koe', action='store_true',
                         help='use pivot based on Knowledge-of-Exponent assumption and BN256 curves')
-    parser.set_defaults(n=10)
+    parser.set_defaults(n=3)
     args = parser.parse_args()
     if args.elliptic:
         GROUP = "Elliptic"
