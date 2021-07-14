@@ -43,7 +43,6 @@ def vector_commitment(x, gamma, g, h):
 
 
 async def create_generators(group, sectype, input_length):
-    logger_cs_mpc.warning("Circuit reconstruction using R1CS is deprecated. Consider using circuit_builder.")
     # TODO: consider setup to exclude trapdoors
     h = group.generator
     random_exponents = [mpc._random(sectype) for i in range(input_length+1)]

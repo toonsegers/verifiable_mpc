@@ -301,9 +301,9 @@ class CircuitVar:
         assert isinstance(a, (int, SecureInteger))
         if isinstance(a, SecureInteger):
             c = mpc.to_bits(a)
-        elif isinstance(a, int):
-            # TODO: review
-            c = twos_complement(a, a.bit_length() + 1)
+        # elif isinstance(a, int):
+        #     # TODO: review, not tested (how to order bits, how to correctly pass ints as inputs?)
+        #     c = twos_complement(a, a.bit_length() + 1)
         else:
             raise NotImplementedError
 
@@ -352,8 +352,12 @@ class CircuitVar:
         return self*pow(self, other-1)
 
 
+# TODO: Review twos_complement
 def twos_complement(value, bit_length):
-    return bin(value & (2 ** bit_length - 1))
+    # return bin(value & (2 ** bit_length - 1))
+    x = bin(value & (2 ** bit_length - 1))
+    x = x[2:]
+    return [0]*(bit_length - len(x)) + [int(d) for d in x]
 
 
 def print_circuit(circuit):
