@@ -12,7 +12,7 @@ Our construction is based on AC20, which reconciles Bulletproofs with Sigma-prot
 
 For our implementation we use the MPyC framework: [https://github.com/lschoe/].
 
-Please find the write-up of this work in Chapter 8 of this Horizon2020 deliverable: [https://media.voog.com/0000/0042/1115/files/D3.3%20-%20Revision%20of%20Extended%20Core%20Protocols.pdf] 
+Please find the write-up of this work in Chapter 8 of this Horizon2020 deliverable (published on June 30, 2021): [https://media.voog.com/0000/0042/1115/files/D3.3%20-%20Revision%20of%20Extended%20Core%20Protocols.pdf] 
 
 *Note: This implementation is work-in-progress. Expect many bugs/issues.*
 
