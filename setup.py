@@ -23,7 +23,7 @@ setup(
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.6",
     ],
-    packages=["verifiable_mpc", "verifiable_mpc.tools", "verifiable_mpc.ac20_circuit_sat", "verifiable_mpc.trinocchio"],
+    packages=["verifiable_mpc", "verifiable_mpc.tools", "verifiable_mpc.ac20", "verifiable_mpc.trinocchio"],
     include_package_data=True,
     # install_requires=["mpyc", "secgroups"],
     python_requires='>=3.6',
