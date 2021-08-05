@@ -1,6 +1,7 @@
 from enum import Enum
 
 from mpyc.finfields import GF, FiniteFieldElement, PrimeFieldElement
+import mpyc.mpctools as mpctools
 from mpyc.runtime import mpc
 from mpyc.sectypes import SecureFiniteField, SecureInteger
 import verifiable_mpc.ac20.mpc_ac20
@@ -266,67 +267,88 @@ class CircuitVar:
 
         Computes output, witnesses and required gates.
         """
-
-        # Compute output CircuitVar
         a = self.value
-        b = mpc.if_else(a == 0, 0, 1)
 
-        # Calculate witnesses
-        assert isinstance(a, (FiniteFieldElement, SecureFiniteField, int, SecureInteger))
-        c = (a + (1 - b)) ** (-1)
-        cv_c = type(self)(c, self.circuit, name="witness_{" + self.name + "!=0}", input_var=True)
+        if isinstance(a, (FiniteFieldElement, SecureFiniteField, SecureInteger)):
+            b = mpc.if_else(a == 0, 0, 1)
+            # We can use the fact that we are working in a field (implicitly for ints)
+            c = (a + (1 - b)) ** (-1)
+            cv_c = type(self)(c, self.circuit, name="witness_{" + self.name + "!=0}", input_var=True)
+            # Expand circuit with gates for equations a · c = b, a · (1 − b) = 0
+            cv_b = self * cv_c
+            cv_d = self * (1 - cv_b)
+            cv_d.label_output("witness_{" + self.name + "!=0}") 
+        elif isinstance(a, int):
+            # Create witness, which is the two's complement bit decomposition of c
+            c = twos_complement(a, a.bit_length()+1)
+            cv_c = [
+                type(self)(c_i, self.circuit, name="witness_{" + self.name + "!=0}", input_var=True)
+                for c_i in c
+            ]
+            # Create output gate of 0 iff witness corresponds to two's complement notation of a
+            cv_a = -1*cv_c[-1]*2**(len(cv_c)-1) + sum(cv_c_i * 2 ** i for i, cv_c_i in enumerate(cv_c[:-1]))
+            cv_d = cv_a - self
+            cv_d.label_output("witness_{" + self.name + "!=0}")
 
-        # Expand circuit with gates for equations a · c = b, a · (1 − b) = 0
-        cv_b = self * cv_c
-        cv_d = self * (1 - cv_b)
-        cv_d.label_output("witness_{" + self.name + "!=0}") 
+            # Compute output
+            cv_b = mpctools.reduce(type(cv_c[0]).__or__, cv_c)
+        else:
+            raise NotImplementedError
 
         return cv_b
 
     def __ne__(self, other):
         return (self - other).check_not_zero()
 
-    def check_ge_zero(self):
-        """Gadget that implements b = (a >= 0) ? 1 : 0.
+    def __eq__(self, other):
+        return (self - other).check_not_zero()*-1 + 1  # TODO rewrite to 1 - (self.. and test
 
+    def check_bit_decomp_positive(self, bit_length):
+        """Gadget that checks if self has a bit-decomposition of bit_length bits.
+
+        Very similar to check if self >= 0.
         Computes output, witnesses and required gates.
         """
-        # TODO: test new gate (for secint and int)
-        # Compute output CircuitVar
-        a = self.value
-        b = a >= 0
-        cv_b = type(self)(b, self.circuit, name="witness_{" + self.name + ">=0}", input_var=True)
-
         # Calculate witnesses
+        a = self.value
         assert isinstance(a, (int, SecureInteger))
         if isinstance(a, SecureInteger):
-            c = mpc.to_bits(a)
-        # elif isinstance(a, int):
-        #     # TODO: review, not tested (how to order bits, how to correctly pass ints as inputs?)
-        #     c = twos_complement(a, a.bit_length() + 1)
+            c = mpc.to_bits(a, l = bit_length)
+        elif isinstance(a, int):
+            # TODO: review 
+            c = twos_complement(a, bit_length + 1)
         else:
             raise NotImplementedError
 
         cv_c = [
-            type(self)(
-                c_i, self.circuit, name="witness_{" + self.name + ">=0}", input_var=True
-            )
-            for c_i in c
+            type(self)(c_i, self.circuit, name="witness_{" + self.name + ">=0}", input_var=True)
+            for c_i in c[:bit_length - 1]  # Only take first l (bit_length) bits.
         ]
 
-        # Expand circuit with gates for equation d = sum c_i * 2^i (in twos complement) and c_i * c_i = c_i
-        cv_d = -1 * cv_c[-1] * 2 ** (len(cv_c) - 1) + sum(
-            cv_c_i * 2 ** i for i, cv_c_i in enumerate(cv_c[:-1])
-        )
-        # Prover uses circuit to show that d = sum c_i * 2^i (in twos complement)
-        cv_d.label_output("witness_{" + self.name + ">=0}")
-
+        # Expand circuit with gates for equation a = sum_{i=0 to l-1} c_i * 2^i (in twos complement) and c_i * c_i = c_i
+        cv_a = sum(cv_c_i * 2 ** i for i, cv_c_i in enumerate(cv_c))
+        cv_b = self == cv_a
         e = [cv_c_i * cv_c_i - cv_c_i for cv_c_i in cv_c]
         [e_i.label_output("witness_{" + self.name + ">=0}") for e_i in e]
 
         return cv_b
 
+    def check_ge_zero(self):
+        """Gadget that implements b = (a >= 0) ? 1 : 0 using check_bit_decomp_positive.
+
+        Computes output, witnesses and required gates.
+        """
+        a = self.value
+        if isinstance(a, SecureInteger):
+            bit_length = a.bit_length
+        elif isinstance(a, int):
+            bit_length = a.bit_length()
+        else:
+            raise NotImplementedError
+        return self.check_bit_decomp_positive(bit_length)
+
     def __le__(self, other):
+        # TODO: check if input(s) are in range        
         return (other - self).check_ge_zero()
 
     def __lt__(self, other):
@@ -344,20 +366,29 @@ class CircuitVar:
     def __repr__(self):
         return self.name + "{" + str(self.value) + "}"
 
-    def __pow__(self, other, mod=None):
+    def __pow__(self, other, mod=None):  # TODO: add or remove mod argument?
         """Exponentiation with public integral power p>=0."""
         if other<0: raise ValueError("Exponent cannot be negative: ", other)
         if other==0: return 1
         if other==1: return self
         return self*pow(self, other-1)
 
+    def __and__(self, other):
+        # Assumes inputs are bits, i.e. inputs are not verified for correctness.
+        # This can be valid if inputs are witnesses.
+        return self * other
 
-# TODO: Review twos_complement
+    def __or__(self, other):
+        # Assumes inputs are bits. (See also __and__)
+        return 1 - (1-self) * (1-other)
+
+
+
 def twos_complement(value, bit_length):
     # return bin(value & (2 ** bit_length - 1))
     x = bin(value & (2 ** bit_length - 1))
     x = x[2:]
-    return [0]*(bit_length - len(x)) + [int(d) for d in x]
+    return ([0]*(bit_length - len(x)) + [int(d) for d in x])[::-1]
 
 
 def print_circuit(circuit):

@@ -56,13 +56,15 @@ def main(pivot_choice, group_choice, n):
         group.is_multiplicative = True
         gf = GF(modulus=group.order)
     elif GROUP == "QR":
-        order, modulus = find_safe_primes(64)
+        order, modulus = find_safe_primes(1024)
         group = QuadraticResidue(modulus=modulus)
         gf = GF(modulus=group.order)
 
     circuit = cb.Circuit()
-    b = cb.CircuitVar(gf(1), circuit, "b")
-    c = cb.CircuitVar(gf(2), circuit, "c")
+    # b = cb.CircuitVar(gf(1), circuit, "b")
+    # c = cb.CircuitVar(gf(2), circuit, "c")
+    b = cb.CircuitVar(1, circuit, "b")
+    c = cb.CircuitVar(2, circuit, "c")
 
     d = c + c + c * c + c * c * 1 + 1 + b 
     e = d*d + c**n + 10
@@ -70,14 +72,14 @@ def main(pivot_choice, group_choice, n):
     f.label_output("f")
     g = f != 100
     g.label_output("g")
-    # h = g >= 10  # Comparison requires sectype = mpc.Secint(..). Slow with KoE pivot.
-    # h.label_output("h")
+    h = g >= 10  # Note: comparison only works for integers
+    h.label_output("h")
 
     x = circuit.initial_inputs()
     # Check if resulting commitment vector is of appropriate length.
     check, padding, g_length = cs.check_input_length_power_of_2(x, circuit)
     # Add unused variables to pad the length of the commitment vector to power of 2 minus 1.
-    dummies = [cb.CircuitVar(0, circuit, "unused_"+str(i)) for i in range(padding)]
+    unused = [cb.CircuitVar(0, circuit, "unused_"+str(i)) for i in range(padding)]
     x = circuit.initial_inputs()
     print("Length of input vector including auxiliary inputs (witnesses for special gates): ", len(x))
     print("Length of commitment vector: ", g_length)

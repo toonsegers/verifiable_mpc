@@ -61,13 +61,16 @@ async def main(pivot_choice, group_choice, n):
         group.is_multiplicative = True
         sec_grp = SecureGroup(group, group.arithm)
     elif group_choice == "QR":
-        order, modulus = find_safe_primes(2048)
+        order, modulus = find_safe_primes(1024)
         group = QuadraticResidue(modulus=modulus)
         sec_grp = SecureGroup(group)
     else:
         raise ValueError
     
+    print("Start AC20 with group: ", group)
+
     sectype = mpc.SecInt(p=sec_grp.group.order)
+    print(sectype.bit_length)
     # sectype = mpc.SecFld(modulus=sec_grp.group.order)
     gf = sectype.field    
 
@@ -88,7 +91,7 @@ async def main(pivot_choice, group_choice, n):
     # Check if resulting commitment vector is of appropriate length.
     check, padding, g_length = cs.check_input_length_power_of_2(x, circuit)
     # Add unused variables to pad the length of the commitment vector to power of 2 minus 1.
-    dummies = [cb.CircuitVar(0, circuit, "unused_"+str(i)) for i in range(padding)]
+    unused = [cb.CircuitVar(0, circuit, "unused_"+str(i)) for i in range(padding)]
     x = circuit.initial_inputs()
 
     print("Length of input vector including auxiliary inputs (witnesses for special gates): ", len(x))
