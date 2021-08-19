@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/toonsegers/verifiable_mpc.svg?branch=main)](https://travis-ci.com/toonsegers/verifiable_mpc)
+
 # Verifiable MPC
 The 'Verifiable MPC' Python package implements the verifiable secure multi-party computation (MPC) scheme.
 

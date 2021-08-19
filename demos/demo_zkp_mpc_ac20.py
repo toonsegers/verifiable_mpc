@@ -75,6 +75,7 @@ async def main(pivot_choice, group_choice, n):
     gf = sectype.field    
 
     circuit = cb.Circuit()
+    # For integers, ensure enough (30 bit) headroom vs SecInt.p
     b = cb.CircuitVar(sectype(1), circuit, "b")
     c = cb.CircuitVar(sectype(2), circuit, "c")
 
