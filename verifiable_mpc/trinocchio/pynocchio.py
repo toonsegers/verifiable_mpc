@@ -29,7 +29,7 @@ from mpyc.finfields import GF
 import verifiable_mpc.tools.code_to_qap as c2q
 import verifiable_mpc.tools.qap_creator as qc
 from sec_groups.pairing import optimal_ate
-from sec_groups.fingroups import FiniteGroupElement
+from mpyc.fingroups import FiniteGroupElement
 
 
 # Globals for module
@@ -99,7 +99,7 @@ def g_eval(gen, poly, s, alpha=1):
     """ Evaluate poly at s, then scale curve point with outcome
     """
     poly_at_s = poly.eval(s)
-    return gen * (alpha * poly_at_s)
+    return int(alpha * poly_at_s) * gen
 
 
 def generate_evalkey(td, qap, gen):
@@ -230,25 +230,25 @@ def compute_h_zk_terms(qap, c, deltas):
 
 
 def compute_proof(qap, c, h, evalkey, deltas=None):
-    vmid_g1_terms = [evalkey["r_v*v" + str(i) + "*g1"] * c[i] for i in qap.indices_mid]
-    wmid_g2_terms = [evalkey["r_w*w" + str(i) + "*g2"] * c[i] for i in qap.indices_mid]
-    ymid_g1_terms = [evalkey["r_y*y" + str(i) + "*g1"] * c[i] for i in qap.indices_mid]
+    vmid_g1_terms = [evalkey["r_v*v" + str(i) + "*g1"] * int(c[i]) for i in qap.indices_mid]
+    wmid_g2_terms = [evalkey["r_w*w" + str(i) + "*g2"] * int(c[i]) for i in qap.indices_mid]
+    ymid_g1_terms = [evalkey["r_y*y" + str(i) + "*g1"] * int(c[i]) for i in qap.indices_mid]
     alphavmid_g1_terms = [
-        evalkey["r_v*alpha_v*v" + str(i) + "*g1"] * c[i] for i in qap.indices_mid
+        evalkey["r_v*alpha_v*v" + str(i) + "*g1"] * int(c[i]) for i in qap.indices_mid
     ]
     alphawmid_g1_terms = [
-        evalkey["r_w*alpha_w*w" + str(i) + "*g1"] * c[i] for i in qap.indices_mid
+        evalkey["r_w*alpha_w*w" + str(i) + "*g1"] * int(c[i]) for i in qap.indices_mid
     ]
     alphaymid_g1_terms = [
-        evalkey["r_y*alpha_y*y" + str(i) + "*g1"] * c[i] for i in qap.indices_mid
+        evalkey["r_y*alpha_y*y" + str(i) + "*g1"] * int(c[i]) for i in qap.indices_mid
     ]
     betavwymid_g1_terms = [
-        evalkey["r_v*beta*v+r_w*beta*w+r_y*beta*y" + str(i) + "_g1"] * c[i]
+        evalkey["r_v*beta*v+r_w*beta*w+r_y*beta*y" + str(i) + "_g1"] * int(c[i])
         for i in qap.indices_mid
     ]
     # h_g1_first_term = gen.g1 * h.coeffs[0]
     h_g1_terms = [
-        evalkey["s^" + str(i) + "*g1"] * h.coeffs[i] for i in range(0, len(h))
+        evalkey["s^" + str(i) + "*g1"] * int(h.coeffs[i]) for i in range(0, len(h))
     ]
     # h_g1_terms.append(h_g1_first_term)
     vmid_g1 = apply_to_list(point_add, vmid_g1_terms)
@@ -292,9 +292,9 @@ def verify(qap, verikey, proof, c):
     verification = {}
 
     # Divisibility check
-    vio_g1_terms = [verikey["r_v*v" + str(i) + "*g1"] * c[i] for i in qap.indices_io]
-    wio_g2_terms = [verikey["r_w*w" + str(i) + "*g2"] * c[i] for i in qap.indices_io]
-    yio_g1_terms = [verikey["r_y*y" + str(i) + "*g1"] * c[i] for i in qap.indices_io]
+    vio_g1_terms = [verikey["r_v*v" + str(i) + "*g1"] * int(c[i]) for i in qap.indices_io]
+    wio_g2_terms = [verikey["r_w*w" + str(i) + "*g2"] * int(c[i]) for i in qap.indices_io]
+    yio_g1_terms = [verikey["r_y*y" + str(i) + "*g1"] * int(c[i]) for i in qap.indices_io]
     vio_g1 = apply_to_list(point_add, vio_g1_terms)
     wio_g2 = apply_to_list(point_add, wio_g2_terms)
     yio_g1 = apply_to_list(point_add, yio_g1_terms)

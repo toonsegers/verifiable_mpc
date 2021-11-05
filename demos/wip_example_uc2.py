@@ -22,17 +22,11 @@ project_root = sys.path.append(os.path.abspath(".."))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
+from mpyc.fingroups import QuadraticResidues, EllipticCurve
 from mpyc.runtime import mpc
-from mpyc.finfields import GF, PrimeFieldElement
-from mpyc.sectypes import SecureFiniteField, SecureInteger
-
 import verifiable_mpc.ac20.circuit_builder as cb
 import verifiable_mpc.ac20.circuit_sat_cb as cs
 import verifiable_mpc.ac20.mpc_ac20_cb as mpc_cs
-from sec_groups.fingroups import QuadraticResidue, EllipticCurve
-import sec_groups.ellcurves as ell
-from sec_groups.secgroups import SecureGroup, secure_repeat
-from sec_groups.tools.find_primes import find_safe_primes
 
 
 prng = SystemRandom()
@@ -47,25 +41,24 @@ async def main(pivot_choice, group_choice, n):
 
     # General setup
     if pivot_choice == cs.PivotChoice.koe:
-        group1 = EllipticCurve(ell.BN256, ell.WEI_HOM_PROJ, ell.Weierstr_HomProj_Arithm)
-        group2 = EllipticCurve(ell.BN256_TWIST, ell.WEI_HOM_PROJ, ell.Weierstr_HomProj_Arithm)
+        group1 = EllipticCurve('BN256', 'jacobian')  # 'projective'
+        group2 = EllipticCurve('BN256_twist', 'jacobian') # 'projective'
         group1.is_additive = False
         group1.is_multiplicative = True
         group2.is_additive = False
         group2.is_multiplicative = True
         group = [group1, group2]
-        sec_grp = SecureGroup(group1)
-        sec_grp2 = SecureGroup(group2)
+        sec_grp = mpc.SecGrp(group1)
+        sec_grp2 = mpc.SecGrp(group2)
         assert sec_grp.group.order == sec_grp2.group.order
     elif group_choice == "Elliptic":
-        group = EllipticCurve(ell.ED25519, ell.ED_HOM_PROJ, ell.Edwards_HomProj_Arithm)
+        group = EllipticCurve('ED25519', 'projective')
         group.is_additive = False
         group.is_multiplicative = True
-        sec_grp = SecureGroup(group, group.arithm)
+        sec_grp = mpc.SecGrp(group)
     elif group_choice == "QR":
-        order, modulus = find_safe_primes(2048)
-        group = QuadraticResidue(modulus=modulus)
-        sec_grp = SecureGroup(group)
+        group = QuadraticResidues(l=2048)
+        sec_grp = mpc.SecGrp(group)
     else:
         raise ValueError
     

@@ -21,8 +21,8 @@ import verifiable_mpc.trinocchio.pynocchio as pynocchio
 import verifiable_mpc.trinocchio.trinocchio as trinocchio
 from mpyc.runtime import mpc
 from mpyc.thresha import _recombination_vector
-import verifiable_mpc.tools.code_to_r1cs_and_qap.code_to_qap as c2q
-import verifiable_mpc.tools.code_to_r1cs_and_qap.qap_creator as qc
+import verifiable_mpc.tools.code_to_qap as c2q
+import verifiable_mpc.tools.qap_creator as qc
 
 
 async def main():

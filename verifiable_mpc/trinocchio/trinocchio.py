@@ -17,15 +17,14 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 from mpyc.runtime import mpc
-from sec_groups.fingroups import EllipticCurve
-import sec_groups.ellcurves as ell
-from sec_groups.fingroups import FiniteGroupElement
+from mpyc.fingroups import EllipticCurve
+from mpyc.fingroups import FiniteGroupElement
 
 
-bn_curve = EllipticCurve(ell.BN256, ell.WEI_JAC, ell.Weierstr_Jacobian_Arithm)
-g1 = bn_curve.base_pt
-bn_twist = EllipticCurve(ell.BN256_TWIST, ell.WEI_JAC, ell.Weierstr_Jacobian_Arithm)
-g2 = bn_twist.base_pt
+bn_curve = EllipticCurve('BN256', 'jacobian')
+g1 = bn_curve.generator
+bn_twist = EllipticCurve('BN256_twist', 'jacobian')
+g2 = bn_twist.generator
 modulus = bn_curve.order
 point_add = FiniteGroupElement.__matmul__
 

@@ -21,8 +21,7 @@ if project_root not in sys.path:
 
 import verifiable_mpc.trinocchio.pynocchio as pynocchio
 from mpyc.finfields import GF, FiniteFieldElement
-from sec_groups.fingroups import EllipticCurve
-import sec_groups.ellcurves as ell
+from mpyc.fingroups import EllipticCurve
 import verifiable_mpc.tools.code_to_qap as c2q
 import verifiable_mpc.tools.qap_creator as qc
 
@@ -30,10 +29,17 @@ import verifiable_mpc.tools.qap_creator as qc
 def main():
     pp = pprint.PrettyPrinter(indent=4)
 
-    bn_curve = EllipticCurve(ell.BN256, ell.WEI_JAC, ell.Weierstr_Jacobian_Arithm)
-    g1 = bn_curve.base_pt
-    bn_twist = EllipticCurve(ell.BN256_TWIST, ell.WEI_JAC, ell.Weierstr_Jacobian_Arithm)
-    g2 = bn_twist.base_pt
+    bn_curve = EllipticCurve('BN256', 'jacobian')
+    g1 = bn_curve.generator
+    bn_twist = EllipticCurve('BN256_twist', 'jacobian')
+    g2 = bn_twist.generator
+    bn_curve.is_additive = True  
+    bn_curve.is_multiplicative = False
+    bn_twist.is_additive = True
+    bn_twist.is_multiplicative = False
+    # TODO: reconsider global setting of is_additive
+    # interaction with other demos, e.g., in python -m unittest
+    # necessitates resetting to default settings at this point
 
     modulus = bn_curve.order
 

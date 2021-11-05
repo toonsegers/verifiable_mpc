@@ -8,8 +8,8 @@ to Plug & Play Secure Algorithmics''
 
 import mpyc.mpctools as mpctools
 from mpyc.runtime import mpc, logging
-from sec_groups.fingroups import EllipticCurveElement
-from sec_groups.secgroups import secure_repeat_public_base_public_output as secure_repeat
+from mpyc.fingroups import EllipticCurvePoint as EllipticCurveElement
+from mpyc.secgroups import repeat_public_base_public_output as secure_repeat
 import verifiable_mpc.tools.qap_creator as qc
 import verifiable_mpc.ac20.pivot as pivot
 import verifiable_mpc.ac20.circuit_sat_r1cs as cs
@@ -164,7 +164,7 @@ async def protocol_4_prover(g_hat, k, Q, L_tilde, z_hat, gf, proof={}, round_i=0
 
     # input_list = [A, B, g_hat, k, Q, L_tilde]
     if isinstance(A, EllipticCurveElement):
-        input_list = [A.to_affine(), B.to_affine(), g_hat, k, Q.to_affine(), L_tilde]
+        input_list = [A.normalize(), B.normalize(), g_hat, k, Q.normalize(), L_tilde]
     else:
         input_list = [A, B, g_hat, k, Q, L_tilde]
 
@@ -242,7 +242,7 @@ async def protocol_5_prover(generators, P, L, y, x, gamma, gf):
     # Step 2: Prover computes challenge
     # input_list = [t, A, generators, P, L, y]
     if isinstance(A, EllipticCurveElement):
-        input_list = [t, A.to_affine(), generators, P.to_affine(), L, y]
+        input_list = [t, A.normalize(), generators, P.normalize(), L, y]
     else:
         input_list = [t, A, generators, P, L, y]
 
@@ -446,7 +446,7 @@ async def prove_linear_form_eval(g, h, P, L, y, x, gamma, gf):
     logger_cs_mpc.debug(f"Provers opened A.")
 
     if isinstance(A, EllipticCurveElement):
-        input_list = [t, A.to_affine(), g, h, P.to_affine(), L, y]
+        input_list = [t, A.normalize(), g, h, P.normalize(), L, y]
     else:
         input_list = [t, A, g, h, P, L, y]
     logger_cs_mpc_hin.debug(f"Method prove_linear_form_eval: input_list={input_list}.")

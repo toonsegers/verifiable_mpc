@@ -33,7 +33,6 @@ from verifiable_mpc.ac20.circuit_sat_r1cs import (
 )
 
 # from mpyc.thresha import _recombination_vector as lagrange   ## see below
-import sec_groups.ellcurves as ell
 import verifiable_mpc.ac20.circuit_builder as cb
 
 prng = SystemRandom()

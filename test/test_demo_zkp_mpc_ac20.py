@@ -21,13 +21,11 @@ class CircuitSat(unittest.TestCase):
         pass
 
     def test_cs_pivot_elliptic(self):
-        verification = mpc.run(demo_zkp_mpc_ac20.main(cs.PivotChoice.pivot, "Elliptic", 10))
+        verification = mpc.run(demo_zkp_mpc_ac20.main(cs.PivotChoice.pivot, "Elliptic", 2))
         self.assertEqual(all(check == True for check in verification.values()), True)
 
     def test_cs_compressed_elliptic(self):
-        verification = mpc.run(
-            demo_zkp_mpc_ac20.main(cs.PivotChoice.compressed, "Elliptic", 10)
-        )
+        verification = mpc.run(demo_zkp_mpc_ac20.main(cs.PivotChoice.compressed, "Elliptic", 2))
         self.assertEqual(all(check == True for check in verification.values()), True)
 
     def test_cs_pivot_quadratic_residues(self):

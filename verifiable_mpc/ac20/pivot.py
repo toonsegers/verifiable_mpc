@@ -20,7 +20,7 @@ from mpyc.finfields import FiniteFieldElement
 import mpyc.mpctools as mpctools
 from mpyc.runtime import logging
 from mpyc.sectypes import SecureObject
-from sec_groups.fingroups import EllipticCurveElement
+from mpyc.fingroups import EllipticCurvePoint as EllipticCurveElement
 
 
 prng = SystemRandom()
@@ -170,7 +170,7 @@ def prove_linear_form_eval(g, h, P, L, y, x, gamma, gf):
     logger_piv.debug(f"Prover computed A={A}.")
 
     if isinstance(A, EllipticCurveElement):
-        input_list = [t, A.to_affine(), g, h, P.to_affine(), L, y]
+        input_list = [t, A.normalize(), g, h, P.normalize(), L, y]
     else:
         input_list = [t, A, g, h, P, L, y]
 
@@ -194,7 +194,7 @@ def verify_linear_form_proof(g, h, P, L, y, z, phi, c):
     order = type(t_check).order
 
     if isinstance(A_check, EllipticCurveElement):
-        input_list = [t_check, A_check.to_affine(), g, h, P.to_affine(), L, y]
+        input_list = [t_check, A_check.normalize(), g, h, P.normalize(), L, y]
     else:
         input_list = [t_check, A_check, g, h, P, L, y]
 

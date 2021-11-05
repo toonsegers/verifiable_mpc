@@ -16,7 +16,7 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 import verifiable_mpc.ac20.pivot as pivot
-from sec_groups.fingroups import EllipticCurveElement
+from mpyc.fingroups import EllipticCurvePoint as EllipticCurveElement
 
 
 prng = SystemRandom()
@@ -54,7 +54,7 @@ def protocol_4_prover(g_hat, k, Q, L_tilde, z_hat, gf, proof={}, round_i=0):
     # Hash A, B and all public elements of Protocol 4
     # input_list = [A, B, g_hat, k, Q, L_tilde]
     if isinstance(A, EllipticCurveElement):
-        input_list = [A.to_affine(), B.to_affine(), g_hat, k, Q.to_affine(), L_tilde]
+        input_list = [A.normalize(), B.normalize(), g_hat, k, Q.normalize(), L_tilde]
     else:
         input_list = [A, B, g_hat, k, Q, L_tilde]
 
@@ -120,7 +120,7 @@ def protocol_5_prover(generators, P, L, y, x, gamma, gf):
     # Step 2: Prover computes challenge
     # input_list = [t, A, generators, P, L, y]
     if isinstance(A, EllipticCurveElement):
-        input_list = [t, A.to_affine(), generators, P.to_affine(), L, y]
+        input_list = [t, A.normalize(), generators, P.normalize(), L, y]
     else:
         input_list = [t, A, generators, P, L, y]
 
@@ -169,7 +169,7 @@ def protocol_4_verifier(g_hat, k, Q, L_tilde, gf, proof, round_i=0):
     # Hash A, B and all public elements of Protocol 4
     # input_list = [A, B, g_hat, k, Q, L_tilde]
     if isinstance(A, EllipticCurveElement):
-        input_list = [A.to_affine(), B.to_affine(), g_hat, k, Q.to_affine(), L_tilde]
+        input_list = [A.normalize(), B.normalize(), g_hat, k, Q.normalize(), L_tilde]
     else:
         input_list = [A, B, g_hat, k, Q, L_tilde]
     logger_cp_hin.debug(
@@ -220,7 +220,7 @@ def protocol_5_verifier(generators, P, L, y, proof, gf):
     A = proof["A"]
     # input_list = [t, A, generators, P, L, y]
     if isinstance(A, EllipticCurveElement):
-        input_list = [t, A.to_affine(), generators, P.to_affine(), L, y]
+        input_list = [t, A.normalize(), generators, P.normalize(), L, y]
     else:
         input_list = [t, A, generators, P, L, y]
 

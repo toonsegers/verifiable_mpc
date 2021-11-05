@@ -22,12 +22,9 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 from mpyc.finfields import GF
-
 import verifiable_mpc.ac20.circuit_sat_cb as cs
 import verifiable_mpc.ac20.circuit_builder as cb
-from sec_groups.fingroups import QuadraticResidue, EllipticCurve
-import sec_groups.ellcurves as ell
-from sec_groups.tools.find_primes import find_safe_primes
+from mpyc.fingroups import QuadraticResidues, EllipticCurve
 
 
 pp = pprint.PrettyPrinter(indent=4)
@@ -36,13 +33,13 @@ PIVOT = cs.PivotChoice.compressed
 GROUP = "QR"
 
 
-def main(pivot_choice, group_choice, n):
+def main(pivot_choice, n=3):
     print("Pivot selected: ", pivot_choice)
 
     if pivot_choice == cs.PivotChoice.koe:
         # TODO: improve syntax for passing two groups to create_generators
-        group1 = EllipticCurve(ell.BN256, ell.WEI_HOM_PROJ, ell.Weierstr_HomProj_Arithm)
-        group2 = EllipticCurve(ell.BN256_TWIST, ell.WEI_HOM_PROJ, ell.Weierstr_HomProj_Arithm)
+        group1 = EllipticCurve('BN256', 'jacobian')  # 'projective'
+        group2 = EllipticCurve('BN256_twist', 'jacobian')  #'projective'
         group1.is_additive = False
         group1.is_multiplicative = True
         group2.is_additive = False
@@ -51,13 +48,12 @@ def main(pivot_choice, group_choice, n):
         order = group1.order
         gf = GF(modulus=order)
     elif GROUP == "Elliptic":
-        group = EllipticCurve(ell.ED25519, ell.ED_HOM_PROJ, ell.Edwards_HomProj_Arithm)
+        group = EllipticCurve('ED25519', 'projective')
         group.is_additive = False
         group.is_multiplicative = True
         gf = GF(modulus=group.order)
     elif GROUP == "QR":
-        order, modulus = find_safe_primes(1024)
-        group = QuadraticResidue(modulus=modulus)
+        group = QuadraticResidues(l=1024)
         gf = GF(modulus=group.order)
 
     circuit = cb.Circuit()
@@ -120,7 +116,7 @@ if __name__ == "__main__":
     elif args.koe:
         PIVOT = cs.PivotChoice.koe
 
-    verification = main(PIVOT, GROUP, args.n)
+    verification = main(PIVOT, args.n)
 
 
 
