@@ -27,7 +27,6 @@ import verifiable_mpc.ac20.knowledge_of_exponent as koe
 from verifiable_mpc.ac20.recombine import _recombination_vectors
 import verifiable_mpc.tools.code_to_r1cs as c2r
 import verifiable_mpc.tools.qap_creator as qc
-import sec_groups.ellcurves as ell
 
 prng = SystemRandom()
 

@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/toonsegers/verifiable_mpc.svg?branch=main)](https://travis-ci.com/toonsegers/verifiable_mpc)
+[![Build Status](https://travis-ci.com/toonsegers/verifiable_mpc.svg)](https://travis-ci.com/toonsegers/verifiable_mpc)
 
 # Verifiable MPC
 The 'Verifiable MPC' Python package implements the verifiable secure multi-party computation (MPC) scheme.
@@ -20,7 +20,7 @@ Please find the write-up of this work in Chapter 8 of this Horizon2020 deliverab
 
 ## Installation
 
-This implementation depends on MPyC (version 0.74 or above), gmpy2 and Secure Groups [https://github.com/toonsegers/sec_groups/].
+This implementation depends on MPyC (version 0.7.9 or above).
 
 Install latest version of MPyC:
 
@@ -28,16 +28,10 @@ Install latest version of MPyC:
 	cd mpyc
 	python setup.py install
 
-Install 'gmpy2':
+Preferably, install 'gmpy2' for better performance:
 
 	pip install gmpy2   				# for Linux (first running `apt install libmpc-dev` may be necessary)
 	pip install gmpy2-[version etc].whl	# for Windows, see Gohlke's unofficial binaries [https://www.lfd.uci.edu/~gohlke/pythonlibs/]
-
-Install Secure Groups:
-
-	git clone https://github.com/toonsegers/sec_groups/
-	cd sec_groups
-	python setup.py install
 
 ## Demos
 

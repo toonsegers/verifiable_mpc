@@ -1,29 +1,27 @@
-import sys, os
+import sys
+import os
+import unittest
+from random import SystemRandom
 
-project_root = sys.path.append(os.path.abspath("../.."))
+project_root = sys.path.append(os.path.abspath('../../..'))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
-
-from random import SystemRandom
-import unittest
 
 import verifiable_mpc.ac20.circuit_sat_r1cs as cs
 import verifiable_mpc.ac20.pivot as pivot
 import verifiable_mpc.ac20.nullity as nullity
 import verifiable_mpc.ac20.compressed_pivot as compressed_pivot
-from mpyc.finfields import GF, FiniteFieldElement
-from sec_groups.tools.find_primes import find_safe_primes
-from sec_groups.fingroups import QuadraticResidue
+from mpyc.finfields import GF
+from mpyc.fingroups import QuadraticResidues
 
 
 class Nullity(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.prng = SystemRandom()
-
-        cls.order, cls.modulus = find_safe_primes(64)
-        cls.group = QuadraticResidue(modulus=cls.modulus)
-        cls.gf = GF(modulus=cls.group.order)
+        cls.group = QuadraticResidues(l=64)
+        cls.order = cls.group.order
+        cls.gf = GF(modulus=cls.order)
 
     @classmethod
     def tearDownClass(cls):

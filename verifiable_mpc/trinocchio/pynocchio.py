@@ -28,7 +28,7 @@ from random import SystemRandom
 from mpyc.finfields import GF
 import verifiable_mpc.tools.code_to_qap as c2q
 import verifiable_mpc.tools.qap_creator as qc
-from sec_groups.pairing import optimal_ate
+from verifiable_mpc.ac20.pairing import optimal_ate
 from mpyc.fingroups import FiniteGroupElement
 
 

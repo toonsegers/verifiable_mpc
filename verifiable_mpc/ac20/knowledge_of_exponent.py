@@ -21,7 +21,7 @@ if project_root not in sys.path:
 import mpyc.mpctools as mpctools
 import verifiable_mpc.ac20.pivot as pivot
 import verifiable_mpc.tools.qap_creator as qc
-import sec_groups.pairing as pairing
+import verifiable_mpc.ac20.pairing as pairing
 
 prng = SystemRandom()
 
@@ -85,14 +85,14 @@ def restriction_argument_prover(S, x, gamma, pp):
     """
 
     # Prover commits only to S-indices of x with (new) commitment P, with secret random gamma
-    P = (pp["pp_lhs"][0] ** gamma) * list_mul([pp["pp_lhs"][i + 1] ** int(x[i]) for i in S])
+    P = (pp["pp_lhs"][0] ** int(gamma)) * list_mul([pp["pp_lhs"][i + 1] ** int(x[i]) for i in S])
 
     # Trusted party or verifier samples beta; only required in designated verifier scenario
     # beta = prng.randrange(1, order)
     # sigma = (g1**beta, [(g2**(z**i))**beta for i in S])
 
     # Prover computes pi^alpha (slight deviation from Thomas' notes, who computes pi)
-    pi = (pp["pp_rhs"][0] ** gamma) * list_mul([pp["pp_rhs"][i + 1] ** int(x[i]) for i in S])
+    pi = (pp["pp_rhs"][0] ** int(gamma)) * list_mul([pp["pp_rhs"][i + 1] ** int(x[i]) for i in S])
     return P, pi
 
 
@@ -146,7 +146,8 @@ def opening_linear_form_verifier(L, pp, proof, u):
     Q = proof["Q"]
     verification = {}
     verification["restriction_arg_check"] = _pairing(P, g2) == _pairing(g1, pi)
-    R = list_mul([pp["pp_rhs"][j] ** (L_linear.coeffs[n - (j + 1)]) for j in range(n)])
+#    R = list_mul([pp["pp_rhs"][j] ** (L_linear.coeffs[n - (j + 1)]) for j in range(n)])
+    R = list_mul([pp["pp_rhs"][j] ** int(L_linear.coeffs[n - (j + 1)]) for j in range(n)])
     check_lhs = _pairing(P, R) * _pairing(Q, g2)
     check_rhs = _pairing(g1, pp["pp_rhs"][n] **  int(u_linear))
     verification["PRQ_check"] = check_lhs == check_rhs
