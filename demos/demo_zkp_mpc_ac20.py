@@ -51,7 +51,7 @@ async def main(pivot_choice, group_choice, n):
         sec_grp2 = mpc.SecGrp(group2)
         assert sec_grp.group.order == sec_grp2.group.order
     elif group_choice == "Elliptic":
-        group = EllipticCurve('ED25519', 'projective')
+        group = EllipticCurve('Ed25519', 'projective')
         group.is_additive = False
         group.is_multiplicative = True
         sec_grp = mpc.SecGrp(group)

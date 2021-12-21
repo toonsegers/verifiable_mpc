@@ -48,7 +48,7 @@ def main(pivot_choice, n=3):
         order = group1.order
         gf = GF(modulus=order)
     elif GROUP == "Elliptic":
-        group = EllipticCurve('ED25519', 'projective')
+        group = EllipticCurve('Ed25519', 'projective')
         group.is_additive = False
         group.is_multiplicative = True
         gf = GF(modulus=group.order)
