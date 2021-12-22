@@ -35,9 +35,7 @@ class CircuitSat(unittest.TestCase):
         verification = demo_zkp_ac20.main(cs.PivotChoice.koe)
         self.assertEqual(verification["y1*y2=y3"], True)
         self.assertEqual(verification["L_wellformed_from_Cfgh_forms"], True)
-        self.assertEqual(
-            verification["pivot_verification"]["restriction_arg_check"], True
-        )
+        self.assertEqual(verification["pivot_verification"]["restriction_arg_check"], True)
         self.assertEqual(verification["pivot_verification"]["PRQ_check"], True)
 
 

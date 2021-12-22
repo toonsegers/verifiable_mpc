@@ -90,16 +90,16 @@ async def koe_restriction_argument_prover(S, x, gamma, pp):
     """
 
     # Prover commits only to S-indices of x with (new) commitment P, with secret random gamma
-    # P = (pp["pp_lhs"][0] ** gamma) * list_mul([pp["pp_lhs"][i + 1] ** x[i] for i in S])
-    P = (await secure_repeat(pp["pp_lhs"][0], gamma)) * list_mul([await secure_repeat(pp["pp_lhs"][i + 1], x[i]) for i in S])
+    P = await secure_repeat([pp["pp_lhs"][0]] + [pp["pp_lhs"][i+1] for i in S],
+                            [gamma] + [x[i]  for i in S])
 
     # Trusted party or verifier samples beta; only required in designated verifier scenario
     # beta = prng.randrange(1, order)
     # sigma = (g1**beta, [(g2**(z**i))**beta for i in S])
 
     # Prover computes pi^alpha (slight deviation from Thomas' notes, who computes pi)
-    # pi = (pp["pp_rhs"][0] ** gamma) * list_mul([pp["pp_rhs"][i + 1] ** x[i] for i in S])
-    pi = (await secure_repeat(pp["pp_rhs"][0], gamma)) * list_mul([await secure_repeat(pp["pp_rhs"][i + 1], x[i]) for i in S])
+    pi= await secure_repeat([pp["pp_rhs"][0]] + [pp["pp_rhs"][i+1] for i in S],
+                            [gamma] + [x[i]  for i in S])
     return P, pi
 
 
@@ -129,10 +129,10 @@ async def koe_opening_linear_form_prover(L, x, gamma, pp, P=None, pi=None):
 
     # assert u_linear == c_poly.coeffs[n], "L(x) not equal to n-th coefficient of c_poly"
     c_bar = c_poly.coeffs
-    c_bar[n] = 0  # Ensure c_bar[n] is also a sectype (for secure_repeat)
+    sectype = type(c_bar[0])
+    c_bar[n] = sectype(0)  # Ensure c_bar[n] is also a sectype (for secure_repeat)
     assert len(pp["pp_lhs"]) == 2 * n
-    # Q = list_mul([g_i ** (-1 * c_bar[i]) for i, g_i in enumerate(pp["pp_lhs"])])
-    Q = list_mul([await secure_repeat(g_i, (c_bar[i] * -1)) for i, g_i in enumerate(pp["pp_lhs"])])
+    Q = await secure_repeat(pp["pp_lhs"], [-c for c in c_bar])
     proof["Q"] = Q
     return proof, u
 
@@ -147,12 +147,8 @@ async def protocol_4_prover(g_hat, k, Q, L_tilde, z_hat, gf, proof={}, round_i=0
     z_hat_l = z_hat[:half]
     z_hat_r = z_hat[half:]
     logger_cs_mpc.debug("Calculate A_i, B_i.")
-    A = await vector_commitment(
-        z_hat_l, _int(L_tilde([0] * half + z_hat_l)), g_hat_r, k
-    )
-    B = await vector_commitment(
-        z_hat_r, _int(L_tilde(z_hat_r + [0] * half)), g_hat_l, k
-    )
+    A = await vector_commitment(z_hat_l, _int(L_tilde([0] * half + z_hat_l)), g_hat_r, k)
+    B = await vector_commitment(z_hat_r, _int(L_tilde(z_hat_r + [0] * half)), g_hat_l, k)
     logger_cs_mpc.debug(f"Provers opened A{str(round_i)}, B{str(round_i)}")
 
     proof["A" + str(round_i)] = A

@@ -41,8 +41,8 @@ async def main(pivot_choice, group_choice, n):
 
     # General setup
     if pivot_choice == cs.PivotChoice.koe:
-        group1 = EllipticCurve('BN256', 'jacobian')  # 'projective'
-        group2 = EllipticCurve('BN256_twist', 'jacobian') # 'projective'
+        group1 = EllipticCurve('BN256', 'projective')
+        group2 = EllipticCurve('BN256_twist', 'projective')
         group1.is_additive = False
         group1.is_multiplicative = True
         group2.is_additive = False
@@ -52,7 +52,7 @@ async def main(pivot_choice, group_choice, n):
         sec_grp2 = mpc.SecGrp(group2)
         assert sec_grp.group.order == sec_grp2.group.order
     elif group_choice == "Elliptic":
-        group = EllipticCurve('Ed25519', 'projective')
+        group = EllipticCurve('Ed25519', 'extended')
         group.is_additive = False
         group.is_multiplicative = True
         sec_grp = mpc.SecGrp(group)
@@ -89,7 +89,7 @@ async def main(pivot_choice, group_choice, n):
     # Check if resulting commitment vector is of appropriate length.
     check, padding, g_length = cs.check_input_length_power_of_2(x, circuit)
     # Add unused variables to pad the length of the commitment vector to power of 2 minus 1.
-    dummies = [cb.CircuitVar(0, circuit, "unused_"+str(i)) for i in range(padding)]
+    dummies = [cb.CircuitVar(sectype(0), circuit, "unused_"+str(i)) for i in range(padding)]
     x = circuit.initial_inputs()
 
     print("Length of input vector including auxiliary inputs (witnesses for special gates): ", len(x))
@@ -123,12 +123,9 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("-n", type=int, help="roughly number of multiplications")
-    parser.add_argument(
-        "--elliptic",
-        action="store_true",
-        help="use elliptic curve groups (default QR groups)",
-    )
+    parser.add_argument('-n', type=int, help='roughly number of multiplications')
+    parser.add_argument('--elliptic', action='store_true',
+                        help='use elliptic curve groups (default QR groups)')
     parser.add_argument('--koe', action='store_true',
                         help='use pivot based on Knowledge-of-Exponent assumption (and BN256 curves)')
     parser.set_defaults(n=10)
