@@ -1,19 +1,19 @@
-"""Implementation of Pinocchio [PGHR13] Protocol 2. 
+"""Implementation of Pinocchio [PGHR13] Protocol 2.
 
-Paper by Parno, Gentry, Howell, Raykova (2013): 
+Paper by Parno, Gentry, Howell, Raykova (2013):
 https://eprint.iacr.org/2013/279
 Python implementation using BN256 curve and asymmetric bilinear map.
 
 Small adaptations to original Pinocchio protocol:
-* H-check and construction of h-polynomial in zero knowledge case 
+* H-check and construction of h-polynomial in zero knowledge case
   follows Trinocchio: https://eprint.iacr.org/2015/480
-* Compute s-powers in evalkey with range(0, qap.d + 1) instead of 
+* Compute s-powers in evalkey with range(0, qap.d + 1) instead of
   range(1, qap.d + 1), same for h_g1_terms in compute_proof()
 
 Credits:
-* Original bn256 module by Jack Lloyd: 
+* Original bn256 module by Jack Lloyd:
   https://github.com/randombit/pairings.py/ (BSD-2-Clause license)
-* Original r1cs and qap tools by Vitalik Buterin: 
+* Original r1cs and qap tools by Vitalik Buterin:
   https://github.com/ethereum/research/tree/master/zksnark (MIT license)
 """
 
@@ -66,11 +66,11 @@ class Generators:
     def __init__(self, td, g1, g2):
         self.g1 = g1
         self.g2 = g2
-        self.g1_v = g1 * (td.r_v)
-        self.g1_w = g1 * (td.r_w)
-        self.g2_w = g2 * (td.r_w)
-        self.g1_y = g1 * (td.r_y)
-        self.g2_y = g2 * (td.r_y)
+        self.g1_v = td.r_v * g1
+        self.g1_w = td.r_w * g1
+        self.g2_w = td.r_w * g2
+        self.g1_y = td.r_y * g1
+        self.g2_y = td.r_y * g2
 
 
 def pairing(a, b):
@@ -132,7 +132,7 @@ def generate_evalkey(td, qap, gen):
         for i in qap.indices_mid
     }
     spowers_g1 = {
-        "s^" + str(i) + "*g1": gen.g1 * (td.s ** i) for i in range(0, qap.d + 1)
+        "s^" + str(i) + "*g1": td.s**i * gen.g1 for i in range(0, qap.d + 1)
     }
     betavwy_g1 = {
         "r_v*beta*v+r_w*beta*w+r_y*beta*y"
@@ -178,12 +178,12 @@ def generate_verikey(td, qap, gen):
     part1 = {
         "g1": gen.g1,
         "g2": gen.g2,
-        "alpha_v*g2": gen.g2 * (td.alpha_v),
-        "alpha_w*g1": gen.g1 * (td.alpha_w),
-        "alpha_y*g2": gen.g2 * (td.alpha_y),
-        "gamma*g2": gen.g2 * (td.gamma),
-        "beta*gamma*g1": gen.g1 * (td.beta * td.gamma),
-        "beta*gamma*g2": gen.g2 * (td.beta * td.gamma),
+        "alpha_v*g2": td.alpha_v * gen.g2,
+        "alpha_w*g1": td.alpha_w * gen.g1,
+        "alpha_y*g2": td.alpha_y * gen.g2,
+        "gamma*g2": td.gamma * gen.g2,
+        "beta*gamma*g1": (td.beta * td.gamma) * gen.g1,
+        "beta*gamma*g2": (td.beta * td.gamma) * gen.g2,
         "r_y*t*g2": g_eval(
             gen.g2_y, qap.t, td.s
         ),  # TS: added when following Trinocchio verification steps
@@ -230,26 +230,15 @@ def compute_h_zk_terms(qap, c, deltas):
 
 
 def compute_proof(qap, c, h, evalkey, deltas=None):
-    vmid_g1_terms = [evalkey["r_v*v" + str(i) + "*g1"] * int(c[i]) for i in qap.indices_mid]
-    wmid_g2_terms = [evalkey["r_w*w" + str(i) + "*g2"] * int(c[i]) for i in qap.indices_mid]
-    ymid_g1_terms = [evalkey["r_y*y" + str(i) + "*g1"] * int(c[i]) for i in qap.indices_mid]
-    alphavmid_g1_terms = [
-        evalkey["r_v*alpha_v*v" + str(i) + "*g1"] * int(c[i]) for i in qap.indices_mid
-    ]
-    alphawmid_g1_terms = [
-        evalkey["r_w*alpha_w*w" + str(i) + "*g1"] * int(c[i]) for i in qap.indices_mid
-    ]
-    alphaymid_g1_terms = [
-        evalkey["r_y*alpha_y*y" + str(i) + "*g1"] * int(c[i]) for i in qap.indices_mid
-    ]
-    betavwymid_g1_terms = [
-        evalkey["r_v*beta*v+r_w*beta*w+r_y*beta*y" + str(i) + "_g1"] * int(c[i])
-        for i in qap.indices_mid
-    ]
+    vmid_g1_terms = [int(c[i]) * evalkey["r_v*v" + str(i) + "*g1"] for i in qap.indices_mid]
+    wmid_g2_terms = [int(c[i]) * evalkey["r_w*w" + str(i) + "*g2"] for i in qap.indices_mid]
+    ymid_g1_terms = [int(c[i]) * evalkey["r_y*y" + str(i) + "*g1"] for i in qap.indices_mid]
+    alphavmid_g1_terms = [int(c[i]) * evalkey[f'r_v*alpha_v*v{i}*g1'] for i in qap.indices_mid]
+    alphawmid_g1_terms = [int(c[i]) * evalkey[f'r_w*alpha_w*w{i}*g1'] for i in qap.indices_mid]
+    alphaymid_g1_terms = [int(c[i]) * evalkey[f'r_y*alpha_y*y{i}*g1'] for i in qap.indices_mid]
+    betavwymid_g1_terms = [int(c[i]) * evalkey[f'r_v*beta*v+r_w*beta*w+r_y*beta*y{i}_g1'] for i in qap.indices_mid]
     # h_g1_first_term = gen.g1 * h.coeffs[0]
-    h_g1_terms = [
-        evalkey["s^" + str(i) + "*g1"] * int(h.coeffs[i]) for i in range(0, len(h))
-    ]
+    h_g1_terms = [int(h.coeffs[i]) * evalkey["s^" + str(i) + "*g1"] for i in range(0, len(h))]
     # h_g1_terms.append(h_g1_first_term)
     vmid_g1 = apply_to_list(point_add, vmid_g1_terms)
     wmid_g2 = apply_to_list(point_add, wmid_g2_terms)
@@ -262,17 +251,17 @@ def compute_proof(qap, c, h, evalkey, deltas=None):
 
     # In zero knowledge case, add terms required to make proof zero knowledge
     if deltas != None:
-        vmid_g1 = vmid_g1 + evalkey["r_v*t*g1"] * deltas.v
-        wmid_g2 = wmid_g2 + evalkey["r_w*t*g2"] * deltas.w
-        ymid_g1 = ymid_g1 + evalkey["r_y*t*g1"] * deltas.y
-        alphavmid_g1 = alphavmid_g1 + evalkey["r_v*alpha_v*t*g1"] * deltas.v
-        alphawmid_g1 = alphawmid_g1 + evalkey["r_w*alpha_w*t*g1"] * deltas.w
-        alphaymid_g1 = alphaymid_g1 + evalkey["r_y*alpha_y*t*g1"] * deltas.y
+        vmid_g1 = vmid_g1 + deltas.v * evalkey["r_v*t*g1"]
+        wmid_g2 = wmid_g2 + deltas.w * evalkey["r_w*t*g2"]
+        ymid_g1 = ymid_g1 + deltas.y * evalkey["r_y*t*g1"]
+        alphavmid_g1 = alphavmid_g1 + deltas.v * evalkey["r_v*alpha_v*t*g1"]
+        alphawmid_g1 = alphawmid_g1 + deltas.w * evalkey["r_w*alpha_w*t*g1"]
+        alphaymid_g1 = alphaymid_g1 + deltas.y * evalkey["r_y*alpha_y*t*g1"]
         betavwymid_g1 = (
             betavwymid_g1
-            + evalkey["r_v*beta*t*g1"] * deltas.v
-            + evalkey["r_w*beta*t*g1"] * deltas.w
-            + evalkey["r_y*beta*t*g1"] * deltas.y
+            + deltas.v * evalkey["r_v*beta*t*g1"]
+            + deltas.w * evalkey["r_w*beta*t*g1"]
+            + deltas.y * evalkey["r_y*beta*t*g1"]
         )
 
     proof = {
@@ -292,9 +281,9 @@ def verify(qap, verikey, proof, c):
     verification = {}
 
     # Divisibility check
-    vio_g1_terms = [verikey["r_v*v" + str(i) + "*g1"] * int(c[i]) for i in qap.indices_io]
-    wio_g2_terms = [verikey["r_w*w" + str(i) + "*g2"] * int(c[i]) for i in qap.indices_io]
-    yio_g1_terms = [verikey["r_y*y" + str(i) + "*g1"] * int(c[i]) for i in qap.indices_io]
+    vio_g1_terms = [int(c[i]) * verikey["r_v*v" + str(i) + "*g1"] for i in qap.indices_io]
+    wio_g2_terms = [int(c[i]) * verikey["r_w*w" + str(i) + "*g2"] for i in qap.indices_io]
+    yio_g1_terms = [int(c[i]) * verikey["r_y*y" + str(i) + "*g1"] for i in qap.indices_io]
     vio_g1 = apply_to_list(point_add, vio_g1_terms)
     wio_g2 = apply_to_list(point_add, wio_g2_terms)
     yio_g1 = apply_to_list(point_add, yio_g1_terms)
