@@ -8,10 +8,6 @@ Alternative for bn128 by Ethereum: https://github.com/ethereum/py_ecc/blob/maste
 """
 
 import os, sys
-project_root = sys.path.append(os.path.abspath(".."))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
-
 from random import SystemRandom
 
 import zk_helpers.pairings.bn256 as bn256

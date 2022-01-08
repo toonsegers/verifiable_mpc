@@ -16,11 +16,6 @@ https://github.com/ethereum/research/tree/master/zksnark (MIT license)
 
 import pprint
 import sys, os
-
-project_root = sys.path.append(os.path.abspath(".."))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
-
 from mpyc.finfields import GF
 import verifiable_mpc.ac20.circuit_sat_cb as cs
 import verifiable_mpc.ac20.circuit_builder as cb

@@ -11,11 +11,6 @@ import os
 import sys
 import hashlib
 from random import SystemRandom
-
-project_root = sys.path.append(os.path.abspath(".."))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
-
 from mpyc.finfields import FiniteFieldElement
 import mpyc.mpctools as mpctools
 from mpyc.runtime import logging

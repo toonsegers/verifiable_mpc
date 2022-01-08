@@ -17,11 +17,6 @@ from random import SystemRandom
 import pprint
 import os
 import sys
-
-project_root = sys.path.append(os.path.abspath(".."))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
-
 from mpyc.fingroups import QuadraticResidues, EllipticCurve
 from mpyc.runtime import mpc
 import verifiable_mpc.ac20.circuit_builder as cb

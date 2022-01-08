@@ -12,11 +12,6 @@ Credits:
 
 import os, sys
 import pprint as pp
-
-project_root = sys.path.append(os.path.abspath(".."))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
-
 import verifiable_mpc.trinocchio.pynocchio as pynocchio
 import verifiable_mpc.trinocchio.trinocchio as trinocchio
 from mpyc.runtime import mpc
@@ -93,7 +88,7 @@ def qeval(x, y):
     lagrange_vect = _recombination_vector(gf, xcoords, 0)
     proof = {}
     for key in proof_input.keys():
-        points_lambda = [proof_inputs[i][key] * lagrange_vect[i] for i in range(m)]
+        points_lambda = [lagrange_vect[i] * proof_inputs[i][key] for i in range(m)]
         proof_element = pynocchio.apply_to_list(trinocchio.point_add, points_lambda)
         proof[key] = proof_element
     print("Proof recombined.")

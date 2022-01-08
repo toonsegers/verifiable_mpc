@@ -1,11 +1,5 @@
 import sys, os
-
-project_root = sys.path.append(os.path.abspath(".."))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
-
 import unittest
-
 import verifiable_mpc.ac20.circuit_sat_cb as cs
 from demos import demo_zkp_mpc_ac20
 from mpyc.runtime import mpc

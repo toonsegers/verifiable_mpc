@@ -18,10 +18,6 @@ Credits:
 """
 
 import os, sys
-project_root = sys.path.append(os.path.abspath(".."))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
-
 import pprint
 from random import SystemRandom
 

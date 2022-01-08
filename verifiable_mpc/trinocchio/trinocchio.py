@@ -11,11 +11,6 @@ Credits:
 """
 
 import os, sys
-
-project_root = sys.path.append(os.path.abspath(".."))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
-
 from mpyc.runtime import mpc
 from mpyc.fingroups import EllipticCurve
 from mpyc.fingroups import FiniteGroupElement

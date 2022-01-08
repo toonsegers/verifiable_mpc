@@ -14,11 +14,6 @@ import logging
 import pprint
 from random import SystemRandom
 import os, sys
-
-project_root = sys.path.append(os.path.abspath(".."))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
-
 import verifiable_mpc.trinocchio.pynocchio as pynocchio
 from mpyc.finfields import GF, FiniteFieldElement
 from mpyc.fingroups import EllipticCurve

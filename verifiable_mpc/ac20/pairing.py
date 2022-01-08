@@ -41,7 +41,6 @@ fields as defined in MPyC (mpyc.finfields.ExtensionFieldElement).
 
 """
 import copy
-
 from mpyc.fingroups import EllipticCurve
 BN256 = EllipticCurve('BN256')
 BN256_TWIST = EllipticCurve('BN256_twist')

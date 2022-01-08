@@ -3,13 +3,7 @@
 """
 
 import sys, os
-
-project_root = sys.path.append(os.path.abspath(".."))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
-
 import unittest
-
 from demos import demo_zkp_pynocchio
 
 

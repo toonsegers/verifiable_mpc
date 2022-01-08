@@ -10,11 +10,6 @@ import os
 import sys
 import logging
 from random import SystemRandom
-
-project_root = sys.path.append(os.path.abspath(".."))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
-
 import verifiable_mpc.ac20.pivot as pivot
 from mpyc.fingroups import EllipticCurvePoint as EllipticCurveElement
 

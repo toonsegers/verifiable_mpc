@@ -5,11 +5,6 @@ The Circuit class tracks gates and variables corresponding to a circuit.
 A circuit is constructed by using instances of CircuitVar in arithmetic.
 """
 import sys, os
-
-project_root = sys.path.append(os.path.abspath(".."))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
-    
 from mpyc.finfields import GF 
 from mpyc.runtime import mpc
 import verifiable_mpc.ac20.circuit_builder as cb
