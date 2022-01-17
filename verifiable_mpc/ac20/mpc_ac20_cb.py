@@ -1,4 +1,4 @@
-""" MPC interface for circuit_sat and compressed_pivot modules.
+"""MPC interface for circuit_sat and compressed_pivot modules.
 
 Circuit_sat implementation of https://eprint.iacr.org/2020/152
 ``Compressed Sigma-Protocol Theory and Practical Application

@@ -25,6 +25,6 @@ setup(
     ],
     packages=["verifiable_mpc", "verifiable_mpc.tools", "verifiable_mpc.ac20", "verifiable_mpc.trinocchio"],
     include_package_data=True,
-    install_requires=["mpyc"],
+    install_requires=["mpyc >= 0.8"],
     python_requires='>=3.6',
 )

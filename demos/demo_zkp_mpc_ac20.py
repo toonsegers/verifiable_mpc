@@ -95,7 +95,6 @@ async def main(pivot_choice, group_choice, n):
     else:
         raise NotImplementedError
 
-#    print("Start non-interactive circuit satisfiability proof with compressed pivot. ")
     print("Start non-interactive circuit satisfiability proof. ")
     proof = await mpc_cs.circuit_sat_prover(generators, circuit, x, gf, pivot_choice)
 

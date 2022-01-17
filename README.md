@@ -20,13 +20,16 @@ Please find the write-up of this work in Chapter 8 of this Horizon2020 deliverab
 
 ## Installation
 
-This implementation depends on MPyC (version 0.7.9 or above).
+This implementation depends on MPyC (version 0.8 or above), which is automatically installed with the following command.
+In the project root, enter:
 
-Install latest version of MPyC:
+	pip install .
 
-	git clone https://github.com/lschoe/mpyc
-	cd mpyc
-	python setup.py install
+Or alternatively:
+
+	pip install -e .
+
+to overwrite the directory in site-packages with a symbolic link to this local project directory, making local changes directly available.
 
 Preferably, install 'gmpy2' for better performance:
 
@@ -41,10 +44,11 @@ The following demos are included:
 * `demo_zkp_*ac20*.py` to use the AC20/Bulletproofs proof system to prove correctness of the (MPC) computation;
 * `demo_zkp_pynocchio.py and *trinocchio.py` to use the Pinocchio zk-SNARK to prove correctness of the (MPC) computation.
 
-Run the demos as follows:
+Run the demos as follows. From the project root, for example:
 
-	cd demos
-	python demo_circuit_builder.py
+	python ./demos/demo_zkp_mpc_ac20.py -M3 --elliptic
+
+This runs the prover side of the AC20 ZK-proof system in MPC using three local parties and the Ed25519 elliptic curve group.
 
 ## Testing
 
