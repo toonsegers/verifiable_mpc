@@ -59,7 +59,7 @@ async def main(pivot_choice, group_choice, n):
     print("Start AC20 with group: ", group)
 
     sectype = mpc.SecInt(l=16, p=sec_grp.group.order)
-    print(sectype.bit_length)
+    print("sectype.bit_length:", sectype.bit_length)
     # sectype = mpc.SecFld(modulus=sec_grp.group.order)
     gf = sectype.field    
 

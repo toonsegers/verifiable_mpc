@@ -1,4 +1,4 @@
-""" MPC interface for circuit_sat and compressed_pivot modules.
+"""MPC interface for circuit_sat and compressed_pivot modules.
 
 Circuit_sat implementation of https://eprint.iacr.org/2020/152
 ``Compressed Sigma-Protocol Theory and Practical Application
@@ -33,7 +33,7 @@ def list_mul(x):
 
 
 def vector_commitment(x, gamma, g, h):
-    """ Pedersen vector commitment. Definition 1 of AC20.
+    """Pedersen vector commitment. Definition 1 of AC20.
 
     Uses secure groups to locally compute Prod_j g_j^{share_i of x_j},
     reduce result and publish this to other parties for recombination.
@@ -104,14 +104,15 @@ async def koe_restriction_argument_prover(S, x, gamma, pp):
 
 
 async def koe_opening_linear_form_prover(L, x, gamma, pp, P=None, pi=None):
-    """Opening linear forms using an adaptation of the multiplication argument
-    of [Gro10].
+    """ZK argument of knowledge for the opening of a linear form.
 
+    Using adaptation of the multiplication argument of [Gro10].
     """
     proof = {}
     n = len(x)
     S = range(n)
-    # """ Run Restriction argument on (P, {1, ..., n}; x, gamma) to show that
+    assert 2*n - 1 <= len(pp["pp_lhs"]), "Requirement does not hold: 2*len(x)-1 <= number of generators in first group."
+    # """Run Restriction argument on (P, {1, ..., n}; x, gamma) to show that
     # (P, P_bar) is indeed a commitment to vector x in Z_q
     # """
     if P is None:
@@ -138,7 +139,7 @@ async def koe_opening_linear_form_prover(L, x, gamma, pp, P=None, pi=None):
 
 
 async def protocol_4_prover(g_hat, k, Q, L_tilde, z_hat, gf, proof={}, round_i=0):
-    """ Non-interactive version of Protocol 4 from Section 4.2: Prover's side."""
+    """Non-interactive version of Protocol 4 from Section 4.2: Prover's side."""
 
     # Step 5: Prover calculates A, B
     half = len(g_hat) // 2
@@ -284,7 +285,7 @@ def calculate_fgh_polys(a, b, c, gf, secfld):
 
 
 async def protocol_8_excl_pivot_prover(generators, code, x, gf, use_koe=False):
-    """ Non-interactive implementation of Protocol 8,
+    """Non-interactive implementation of Protocol 8,
     including nullity protocol, but excluding the call
     to the compressed pivot protocol.
 
@@ -423,7 +424,7 @@ async def protocol_8_excl_pivot_prover(generators, code, x, gf, use_koe=False):
 
 
 async def prove_linear_form_eval(g, h, P, L, y, x, gamma, gf):
-    """ Sigma protocol Pi_s (protocol 2) from AC20.
+    """Sigma protocol Pi_s (protocol 2) from AC20.
 
     Non-interactive version.
     """
@@ -465,7 +466,7 @@ async def prove_linear_form_eval(g, h, P, L, y, x, gamma, gf):
 async def circuit_sat_prover(
     generators, code, x, gf, pivot_choice=cs.PivotChoice.compressed
 ):
-    """ Non-interactive implementation of Protocol 8, prover-side,
+    """Non-interactive implementation of Protocol 8, prover-side,
     including Nullity using compressed pivot (Protocol 5).
     """
     logger_cs_mpc.debug(f"Enter circuit_sat_prover. pivot_choice={pivot_choice}")

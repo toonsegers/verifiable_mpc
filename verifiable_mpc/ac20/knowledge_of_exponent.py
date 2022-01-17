@@ -7,7 +7,7 @@ Knowledge-of-Exponent Assumption (n-PKEA).
 
 Protocols:
 * Program from the Knowledge-of-Exponent Assumption,
-Section 9, page 25
+Section 9, page 25. Based on personal communication with authors.
 """
 
 import os
@@ -92,23 +92,23 @@ def restriction_argument_prover(S, x, gamma, pp):
 
 
 def restriction_argument_verifier(P, pi, pp):
-    """ Resriction argument from [Gro10]: Verifier's side
+    """Restriction argument from [Gro10]: Verifier's side.
     """
     verification = _pairing(P, pp["pp_rhs"][0]) == _pairing(pp["pp_lhs"][0], pi)
     return verification
 
 
 def opening_linear_form_prover(L, x, gamma, pp, P=None, pi=None):
-    """Opening linear forms using an adaptation of the multiplication argument
-    of [Gro10].
+    """ZK argument of knowledge for the opening of a linear form.
 
+    Using adaptation of the multiplication argument of [Gro10].
     """
     proof = {}
     n = len(x)
     S = range(n)
-    # """ Run Restriction argument on (P, {1, ..., n}; x, gamma) to show that
+    assert 2*n - 1 <= len(pp["pp_lhs"]), "Requirement does not hold: 2*len(x)-1 <= number of generators in first group."
+    # Run Restriction argument on (P, {1, ..., n}; x, gamma) to show that
     # (P, P_bar) is indeed a commitment to vector x in Z_q
-    # """
     if P is None:
         P, pi = restriction_argument_prover(S, x, gamma, pp)
     proof["P"] = P
@@ -140,7 +140,8 @@ def opening_linear_form_verifier(L, pp, proof, u):
     pi = proof["pi"]
     Q = proof["Q"]
     verification = {}
-    verification["restriction_arg_check"] = _pairing(P, g2) == _pairing(g1, pi)
+    # verification["restriction_arg_check"] = _pairing(P, g2) == _pairing(g1, pi)
+    verification["restriction_arg_check"] = restriction_argument_verifier(P, pi, pp)
 #    R = list_mul([pp["pp_rhs"][j] ** (L_linear.coeffs[n - (j + 1)]) for j in range(n)])
     R = list_mul([pp["pp_rhs"][j] ** int(L_linear.coeffs[n - (j + 1)]) for j in range(n)])
     check_lhs = _pairing(P, R) * _pairing(Q, g2)
@@ -150,7 +151,7 @@ def opening_linear_form_verifier(L, pp, proof, u):
 
 
 def prove_nullity_koe(pp, lin_forms, x, gamma, gf, P, pi):
-    """ Nullity protocol calling the ZK Proof for lienar form openings
+    """Nullity protocol calling the ZK Proof for lienar form openings
     based on Knowledge of Exponent assumption.
     """
     input_list = [P, lin_forms]

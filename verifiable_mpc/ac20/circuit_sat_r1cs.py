@@ -1,4 +1,4 @@
-""" Implements https://eprint.iacr.org/2020/152.
+"""Implements https://eprint.iacr.org/2020/152.
 
 This module implements the circuit satisfiability protocol
 (Protocol 8) from ``Compressed Sigma-Protocol Theory and
@@ -37,7 +37,7 @@ logger_cs_hout.setLevel(logging.INFO)
 
 
 class PivotChoice(Enum):
-    """ Select pivot proof system. """
+    """Select pivot proof system. """
 
     pivot = 1
     compressed = 2
@@ -45,7 +45,7 @@ class PivotChoice(Enum):
 
 
 def create_generators(g_length, pivot_choice, group=None, progress_bar=False):
-    """ Create generators g, h, k.
+    """Create generators g, h, k.
 
     Ensure that, for parties that may subsequently act as provers,
     finding nontrivial linear relations between them is computationally
@@ -94,7 +94,7 @@ def create_generators(g_length, pivot_choice, group=None, progress_bar=False):
 
 
 def input_length_power_of_2(x, code, pad_with=0):
-    """ Pad code and x to meet requirements of compressed pivot protocol.
+    """Pad code and x to meet requirements of compressed pivot protocol.
 
     Arguments:
     x -- intput vector
@@ -234,7 +234,7 @@ def express_as_x_or_gamma(symbol, flatcode, varnames, n):
 
 
 def mul_gates_for_splitting(flatcode, varnames, n):
-    """ Checks all mul-gates of flatcode for terms that require splitting;
+    """Checks all mul-gates of flatcode for terms that require splitting;
 
     Returns symbol and index of terms that are not expressed as terms of z (x or gamma terms) or of type integer.
     """
@@ -267,12 +267,12 @@ def lagrange(gf, lagr_range, c):
 def create_fgh_linear_forms(
     r1cs, c, varnames, flatcode, mul_indices_of_flatcode, n, m, gf
 ):
-    """ Create linear forms corresponding to f, g and h
+    """Create linear forms corresponding to f, g and h
 
     """
 
     def create_linear_form(M, wiretype):
-        """ Return linear form corresponding to poly f, g or h
+        """Return linear form corresponding to poly f, g or h
 
         Input: Matrix of left, right or output wires, A, B or C. (represented by M)
         Output: linear form
@@ -393,7 +393,7 @@ def next_power_of_2(x):
 
 
 def protocol_8_excl_pivot_prover(generators, code, x, gf, use_koe=False):
-    """ Non-interactive implementation of Protocol 8,
+    """Non-interactive implementation of Protocol 8,
     including nullity protocol, but excluding the call
     to the compressed pivot protocol.
 
@@ -453,7 +453,7 @@ def protocol_8_excl_pivot_prover(generators, code, x, gf, use_koe=False):
     y3 = h_poly.eval(c)
     assert y3 == y1 * y2
 
-    """ Create linear forms corresponding to f(c), g(c), h(c) for Pi_Nullity step
+    """Create linear forms corresponding to f(c), g(c), h(c) for Pi_Nullity step
     in Protocol 6 (Protocol 8 in updated version)
     """
     linform_f, linform_g, linform_h = create_fgh_linear_forms(
@@ -589,7 +589,7 @@ def protocol_8_excl_pivot_verifier(proof, code, gf, use_koe=False):
 
 
 def circuit_sat_prover(generators, code, x, gf, pivot_choice=PivotChoice.compressed):
-    """ Non-interactive implementation of Protocol 8, prover-side,
+    """Non-interactive implementation of Protocol 8, prover-side,
     including Nullity using arbitrary pivot.
     """
     proof, z_commitment, L, z, gamma = protocol_8_excl_pivot_prover(
@@ -621,7 +621,7 @@ def circuit_sat_prover(generators, code, x, gf, pivot_choice=PivotChoice.compres
 def circuit_sat_verifier(
     proof, generators, code, gf, pivot_choice=PivotChoice.compressed
 ):
-    """ Non-interactive implementation of Protocol 8, verifier-side,
+    """Non-interactive implementation of Protocol 8, verifier-side,
     including Nullity using arbitrary pivot.
     """
     verification, L = protocol_8_excl_pivot_verifier(proof, code, gf)
