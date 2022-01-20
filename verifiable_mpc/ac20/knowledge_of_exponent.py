@@ -142,7 +142,7 @@ def opening_linear_form_verifier(L, pp, proof, u):
     verification = {}
     # verification["restriction_arg_check"] = _pairing(P, g2) == _pairing(g1, pi)
     verification["restriction_arg_check"] = restriction_argument_verifier(P, pi, pp)
-#    R = list_mul([pp["pp_rhs"][j] ** (L_linear.coeffs[n - (j + 1)]) for j in range(n)])
+    # R = list_mul([pp["pp_rhs"][j] ** (L_linear.coeffs[n - (j + 1)]) for j in range(n)])
     R = list_mul([pp["pp_rhs"][j] ** int(L_linear.coeffs[n - (j + 1)]) for j in range(n)])
     check_lhs = _pairing(P, R) * _pairing(Q, g2)
     check_rhs = _pairing(g1, pp["pp_rhs"][n] **  int(u_linear))
