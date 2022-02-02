@@ -205,7 +205,7 @@ def get_var_placement(inputs, flatcode):
 
 
 # Convert the flattened code generated above into a rank-1 constraint system
-def flatcode_to_r1cs(inputs, flatcode):
+def flatcode_to_r1cs(inputs, flatcode, var_placement = None):
     varz = get_var_placement(inputs, flatcode)
     A, B, C = [], [], []
     used = {i: True for i in inputs}

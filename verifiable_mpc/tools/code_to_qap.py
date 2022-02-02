@@ -27,6 +27,7 @@ class QAP:
         self.d = len(flatcode)
         self.m = len(varnames) - 1 # Note: `~one` is not included in count
         self.out_ix = varnames.index("~out")
+        # TODO: allow for multiple output indices (previous line, also below)
         self.indices = range(self.m+1) 
         self.indices_io_and_0 = range(0, self.out_ix + 1) # includes "one" 
         self.indices_io = range(1, self.out_ix + 1) # io indices exclude "one" 

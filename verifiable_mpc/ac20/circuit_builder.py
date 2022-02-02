@@ -1,3 +1,4 @@
+# TODO/NOTE: All gadgets are work in progress, incomplete
 from enum import Enum
 
 from mpyc.finfields import GF, FiniteFieldElement, PrimeFieldElement
@@ -185,6 +186,7 @@ class CircuitVar:
         output_var  flag to indicate output variable (for circuit.output_ct counter)
 
     """
+    # TODO/NOTE: All gadgets are work in progress, incomplete
 
     def __init__(self, value, circuit, name=None, input_var=True):
         self.value = value
@@ -267,6 +269,7 @@ class CircuitVar:
 
         Computes output, witnesses and required gates.
         """
+        # TODO: correct/complete gadget, review
         a = self.value
 
         if isinstance(a, (FiniteFieldElement, SecureFiniteField, SecureInteger)):
@@ -279,12 +282,13 @@ class CircuitVar:
             cv_d = self * (1 - cv_b)
             cv_d.label_output("witness_{" + self.name + "!=0}") 
         elif isinstance(a, int):
-            # Create witness, which is the two's complement bit decomposition of c
+            # Create witness c, which is the two's complement bit decomposition of a
             c = twos_complement(a, a.bit_length()+1)
             cv_c = [
                 type(self)(c_i, self.circuit, name="witness_{" + self.name + "!=0}", input_var=True)
                 for c_i in c
             ]
+            # TODO: review next block 
             # Create output gate of 0 iff witness corresponds to two's complement notation of a
             cv_a = -1*cv_c[-1]*2**(len(cv_c)-1) + sum(cv_c_i * 2 ** i for i, cv_c_i in enumerate(cv_c[:-1]))
             cv_d = cv_a - self
@@ -309,6 +313,7 @@ class CircuitVar:
         Very similar to check if self >= 0.
         Computes output, witnesses and required gates.
         """
+        # TODO: correct/complete gadget, review
         # Calculate witnesses
         a = self.value
         assert isinstance(a, (int, SecureInteger))

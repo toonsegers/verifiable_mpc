@@ -1,10 +1,13 @@
 """WIP: Plot circuit graphs with networkx. *unfinished*
+
+When ready, move this into /demos/demo_circuit_builder.py
 """
 import pprint
 from mpyc.finfields import GF
+from mpyc.fingroups import QuadraticResidues
 import verifiable_mpc.ac20.circuit_sat_cb as cs
 import verifiable_mpc.ac20.circuit_builder as cb
-from mpyc.fingroups import QuadraticResidues
+import verifiable_mpc.tools.code_to_r1cs as r1cs
 
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -100,6 +103,42 @@ def main(pivot_choice, n):
     plt.axis("equal")
     plt.savefig('circuit.png')
 
+    # Convert circuit to flatcode
+    flatcode = [[gate.op, gate.output, gate.inputs[0], gate.inputs[1]] for gate in circuit.gates]
+    # Parse into format required by Vitalik's R1CS code
+    flatcode = [["+" if line[0] == cb.op.add else "*", line[1], line[2], line[3]] for line in flatcode] 
+    # TODO: Make an alternative version of py- and trinocchio (code_to_qap.QAP) that handles flatcode from circuit_builder
+    # TODO: or make a simple circuit-to-qap function based on pinocchio paper
+    # TODO: Handle scalar mul efficiently (collapse these gates/lines in flatcode using linear algebra)
+    # TODO: include "minus" and "division" gates
+    # TODO: R1CS methods require use of "~out", "set", "/", etc.
+    # TODO: in circuit_builder, 'set' operation is implicitly used (an input CircuitVar is initialized with a value)
+    #       Does it need to be included in the flatcode?
+    flatcode = [[line[0], *[i.name if isinstance(i, cb.CircuitVar) else i for i in line[1:]]] for line in flatcode] 
+    print("Flatcode:")
+    for i in flatcode:
+        print(i)
+
+    inputs = [v.name for v in circuit.circuitvars if v.input_index != None]
+    print("Inputs:")
+    print(inputs)
+    print("Circuit vars, len():")
+    print(circuit.circuitvars)
+    # TODO: get_var_placement plaatst ook "~one" vooraan.
+    print(len(circuit.circuitvars))
+    A, B, C = r1cs.flatcode_to_r1cs(inputs, flatcode, circuit.circuitvars)
+    print('A')
+    for x in A:
+        print(x)
+    print('B')
+    for x in B:
+        print(x)
+    print('C')
+    for x in C:
+        print(x)
+
+
+
 if __name__ == "__main__":
     import argparse
 
@@ -109,6 +148,11 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     verification = main(cs.PivotChoice.compressed, args.n)
+
+
+
+## TODOS
+# When ready, move this into /demos/demo_circuit_builder.py
 
 
 
@@ -150,3 +194,18 @@ if __name__ == "__main__":
     # nx.draw(G, pos, node_size=20, alpha=0.5, node_color="blue", with_labels=True)
     # plt.axis("equal")
     # plt.savefig('hierarchy2.png')
+
+
+
+
+    # # Show forms corresponding to circuit
+    # circuit_forms = cb.calculate_circuit_forms(circuit)
+    # # # AC20 form requires the inclusion of variables corresponding to f(0), g(0), h(0) and h(i), i = m+1, ..., 2m
+    # # circuit_forms = [cb.convert_to_ac20(f, circuit) for f in circuit_forms]
+    # print("Circuit forms:")
+    # print(circuit_forms)
+    # print("Circuit vars:")
+    # print(circuit.circuitvars)
+    # print("Circuit #input vars and #mul vars:")
+    # print(circuit.input_ct)
+    # print(circuit.mul_ct)
