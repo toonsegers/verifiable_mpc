@@ -80,8 +80,8 @@ def main(pivot_choice, n=3):
 
     print("Start non-interactive circuit satisfiability proof with compressed pivot. ")
     proof = cs.circuit_sat_prover(generators, circuit, x, gf, pivot_choice)
-    # print("Proof:")
-    # pp.pprint(proof)
+    print("Proof:")
+    pp.pprint(proof)
     print("Start verification.")
     verification = cs.circuit_sat_verifier(proof, generators, circuit, gf, pivot_choice)
     print("Verification checks: ")

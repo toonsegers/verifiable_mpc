@@ -267,9 +267,10 @@ class CircuitVar:
     def check_not_zero(self):
         """Gadget that implements b = (a != 0) ? 1 : 0.
 
-        Computes output, witnesses and required gates.
+        Computes witnesses, required new gates and output.
         """
-        # TODO: correct/complete gadget, review
+        # TODO: Correct/complete gadget, review
+        # TODO: Consider replacing circuit proof with a specialized Sigma-proof        
         a = self.value
 
         if isinstance(a, (FiniteFieldElement, SecureFiniteField, SecureInteger)):
@@ -288,13 +289,13 @@ class CircuitVar:
                 type(self)(c_i, self.circuit, name="witness_{" + self.name + "!=0}", input_var=True)
                 for c_i in c
             ]
-            # TODO: review next block 
-            # Create output gate of 0 iff witness corresponds to two's complement notation of a
+            # Create output gate s.t. inverse of twos-complement(witness) - a = 0
+            # Proves that witness corresponds to two's complement notation of a
             cv_a = -1*cv_c[-1]*2**(len(cv_c)-1) + sum(cv_c_i * 2 ** i for i, cv_c_i in enumerate(cv_c[:-1]))
             cv_d = cv_a - self
             cv_d.label_output("witness_{" + self.name + "!=0}")
 
-            # Compute output
+            # Compute output, based on the new witness, using mini-gadget for __or__
             cv_b = mpctools.reduce(type(cv_c[0]).__or__, cv_c)
         else:
             raise NotImplementedError
@@ -311,31 +312,32 @@ class CircuitVar:
         """Gadget that checks if self has a bit-decomposition of bit_length bits.
 
         Very similar to check if self >= 0.
-        Computes output, witnesses and required gates.
+        Computes witnesses, required new gates and output.
         """
-        # TODO: correct/complete gadget, review
         # Calculate witnesses
         a = self.value
         assert isinstance(a, (int, SecureInteger))
         if isinstance(a, SecureInteger):
             c = mpc.to_bits(a, l = bit_length)
         elif isinstance(a, int):
-            # TODO: review 
+            # TODO: review edge cases
             c = twos_complement(a, bit_length + 1)
         else:
             raise NotImplementedError
-
         cv_c = [
             type(self)(c_i, self.circuit, name="witness_{" + self.name + ">=0}", input_var=True)
             for c_i in c[:bit_length - 1]  # Only take first l (bit_length) bits.
         ]
 
-        # Expand circuit with gates for equation a = sum_{i=0 to l-1} c_i * 2^i (in twos complement) and c_i * c_i = c_i
+        # Expand circuit 
+        # Proves that a = sum_{i=0 to l-1} c_i * 2^i (in twos complement) 
+        # and c_i * c_i - c_i = 0 (public output)
         cv_a = sum(cv_c_i * 2 ** i for i, cv_c_i in enumerate(cv_c))
-        cv_b = self == cv_a
         e = [cv_c_i * cv_c_i - cv_c_i for cv_c_i in cv_c]
         [e_i.label_output("witness_{" + self.name + ">=0}") for e_i in e]
 
+        # Compute output, using gadget for ==
+        cv_b = self == cv_a
         return cv_b
 
     def check_ge_zero(self):
@@ -379,12 +381,14 @@ class CircuitVar:
         return self*pow(self, other-1)
 
     def __and__(self, other):
-        # Assumes inputs are bits, i.e. inputs are not verified for correctness.
-        # This can be valid if inputs are witnesses.
+        # Assumes input is 0 or 1, i.e. inputs are not verified for correctness.
+        # Typical scenario where this is valid: when inputs are witnesses to a verifiable comparison.
+        # TODO: Consider adding flag to test if self is 0 or 1.
         return self * other
 
     def __or__(self, other):
-        # Assumes inputs are bits. (See also __and__)
+        # Assumes input is 0 or 1. (See also __and__)
+        # TODO: Consider adding flag to test if self is 0 or 1.
         return 1 - (1-self) * (1-other)
 
 
