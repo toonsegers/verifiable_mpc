@@ -32,7 +32,9 @@ async def sigma_prove_not_zero(x, group):
     # TODO: Consider separating generators and commitment from return value
     gf = GF(modulus=group.order)
     g = group.generator
-    y = 1  # TODO: Redundant?
+    y = 1  # TODO: randomize to make B a hiding commitment, masking input x
+    # TODO: Follow exercise 5.3.4, e.g. a), where fresh masks are introduced
+    # TODO: See exercise 7.1.1. for working with ElGamal encryptions
 
     if isinstance(x, (SecureFiniteField, SecureInteger)):
         sectype = type(x)
@@ -40,7 +42,6 @@ async def sigma_prove_not_zero(x, group):
         r = mpc._random(sectype)
         h = await secgrp.repeat_public(g, r)
 
-        # Prover
         B = await secgrp.repeat_public([g, h], [x, y])
         u, v = [mpc._random(sectype) for i in range(2)]
         a = await secgrp.repeat_public([B, h], [u, v])
@@ -51,17 +52,16 @@ async def sigma_prove_not_zero(x, group):
     elif isinstance(x, int):
         r = gf(prng.randrange(1, group.order))
         h = g^int(r)
-        # Prover
-        # B = g^x h^y, where x, y are private input to the prover
-        B = (g^x)*(h^y)
+
+        B = (g^x)@(h^y)
         u, v = [gf(prng.randrange(1, group.order)) for i in range(2)]
-        a = (B^int(u))*(h^int(v))
+        a = (B^int(u))@(h^int(v))
         # In interactive protocol, verifier samples c: c = gf(prng.randrange(1, n))
         # Make non-interactive with Fiat-Shamir heuristic
         input_list = [a, B]
         c = gf(pivot.fiat_shamir_hash(input_list, gf.order))
         r = u + c/x
-        s = v - c*y/x
+        s = v - c@y/x
     else:
         raise TypeError
 
@@ -82,7 +82,7 @@ def sigma_verify_not_zero(proof):
     input_list = [a, B]
     gf = GF(modulus=type(g).order)
     c = gf(pivot.fiat_shamir_hash(input_list, gf.order))
-    return (B^int(r))*(h^int(s)) == a*(g^int(c))
+    return (B^int(r))@(h^int(s)) == a@(g^int(c))
 
 
 async def example_not_zero():

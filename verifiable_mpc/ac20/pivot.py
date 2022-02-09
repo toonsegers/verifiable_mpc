@@ -129,6 +129,8 @@ def _int(value):
 
 
 def fiat_shamir_hash(input_list, order):
+    # TODO: Review / Ensure that hash lengths are not ambiguous for group elements.
+    # TODO: add to_bytes as a method for Group elements (adds padding to e.g. 200 bytes, not necessarily reversible)
     hash_input = str(input_list).encode("utf-8")
     c = int.from_bytes(hashlib.sha256(hash_input).digest(), "little") % order
     return c
