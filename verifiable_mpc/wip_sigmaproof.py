@@ -61,7 +61,7 @@ async def sigma_prove_not_zero(x, group):
         input_list = [a, B]
         c = gf(pivot.fiat_shamir_hash(input_list, gf.order))
         r = u + c/x
-        s = v - c@y/x
+        s = v - c*y/x
     else:
         raise TypeError
 
