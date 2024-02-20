@@ -25,7 +25,7 @@ logger_piv.setLevel(logging.INFO)
 
 def list_mul(x):
     rettype = type(x[0])
-    return mpctools.reduce(rettype.operation, x, iv = rettype.identity)
+    return mpctools.reduce(rettype.operation, x, initial=rettype.identity)
 
 
 class AffineForm:
